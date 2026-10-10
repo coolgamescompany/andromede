@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://dp3os4rpa5pew"]
+
+[ext_resource type="Script" uid="uid://5lombo2rndut" path="res://ui/hud/HudController.cs" id="1_e0nub"]
+[ext_resource type="FontFile" uid="uid://bsdxl3pwadbqo" path="res://assets/fonts/Silkscreen/Silkscreen-Regular.ttf" id="2_w75iv"]
+[ext_resource type="FontFile" uid="uid://bgr7kl0i5xgbq" path="res://assets/fonts/Silkscreen/Silkscreen-Bold.ttf" id="3_imuuq"]
+
+[node name="HUD" type="Control" unique_id=7211338]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_e0nub")
+
+[node name="SystemInfoLabel" type="Label" parent="." unique_id=270016574]
+unique_name_in_owner = true
+layout_mode = 1
+offset_right = 40.0
+offset_bottom = 23.0
+theme_override_fonts/font = ExtResource("2_w75iv")
+text = "SystemInfoLabel"
+
+[node name="FlightDataLabel" type="Label" parent="." unique_id=1720364987]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -23.0
+offset_right = 40.0
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("3_imuuq")
+text = "FlightDataLabel"

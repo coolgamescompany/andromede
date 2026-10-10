@@ -13,6 +13,18 @@ public partial class World : Node2D
 		GD.Print("Космос запущен!");
 		_spaceGrid = GetNode<ColorRect>("%SpaceGrid");
 
+		// Находим шаттл на сцене мира
+		RigidBody2D shuttleNode = GetNode<RigidBody2D>("%Shuttle");
+
+		// Находим HUD
+		var hud = GetNode<SpaceGame.UI.HudController>("%HUD");
+
+		// Инициализируем приборы датчиков
+		if (hud != null && shuttleNode != null)
+		{
+			hud.Initialize(shuttleNode);
+		}
+
 		// Вместо прямых настроек используем безопасный отложенный вызов,
 		// чтобы Godot успел правильно инициализировать узел.
 		// "size" — это внутреннее имя свойства Size в движке.

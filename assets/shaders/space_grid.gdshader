@@ -1,7 +1,7 @@
 shader_type canvas_item;
 
 uniform vec2 camera_offset = vec2(0.0);
-uniform float grid_size = 100.0;
+uniform float grid_size = 1000.0;
 uniform vec4 grid_color : source_color = vec4(0.2, 0.2, 0.2, 1.0);
 uniform float line_thickness = 1.0;
 
