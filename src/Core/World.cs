@@ -1,77 +1,95 @@
 using Godot;
 using System;
+using SpaceGame.UI;
 
-public partial class World : Node2D
+namespace SpaceGame.Core
 {
-	private ColorRect _spaceGrid;
-	private Camera2D _camera;
-
-	// READY
-	public override void _Ready()
+	public partial class World : Node2D
 	{
-		base._Ready();
-		GD.Print("Космос запущен!");
-		_spaceGrid = GetNode<ColorRect>("%SpaceGrid");
+		private ColorRect _spaceGrid;
+		private Camera2D _camera;
+		private HudController _hud;
+		private SpaceGame.Entities.Shuttle.Shuttle _shuttle; // Сохраняем ссылку на шаттл
 
-		// Находим шаттл на сцене мира
-		var shuttleNode = GetNode<SpaceGame.Entities.Shuttle.Shuttle>("%Shuttle");
-
-		// Находим HUD
-		var hud = GetNode<SpaceGame.UI.HudController>("%HUD");
-
-		// Инициализируем приборы датчиков
-		if (hud != null && shuttleNode != null)
+		public override void _Ready()
 		{
-			hud.Initialize(shuttleNode);
+			base._Ready();
+			GD.Print("Космос запущен!");
+			
+			_spaceGrid = GetNode<ColorRect>("%SpaceGrid");
+			_hud = GetNode<HudController>("%HUD");
+
+			// Находим шаттл
+			_shuttle = GetNode<SpaceGame.Entities.Shuttle.Shuttle>("%Shuttle");
+
+			if (_shuttle != null)
+			{
+				// На всякий случай оставляем подписку
+				_shuttle.CameraReady += RegisterCamera;
+
+				if (_hud != null)
+				{
+					_hud.Initialize(_shuttle);
+				}
+			}
 		}
 
-		// Вместо прямых настроек используем безопасный отложенный вызов,
-		// чтобы Godot успел правильно инициализировать узел.
-		// "size" — это внутреннее имя свойства Size в движке.
-		if (_spaceGrid != null)
+		public override void _Process(double delta)
 		{
-			// Берём реальный физический размер окна на твоём мониторе
-			Vector2 viewportSize = GetViewportRect().Size;
-			// Насильно растягиваем сетку под этот размер
-			_spaceGrid.SetDeferred("size", viewportSize);
+			base._Process(delta);
+
+			// ЖЕЛЕЗОБЕТОННЫЙ ХАК: Если камера до сих пор null, пробуем вытащить её напрямую из шаттла
+			if (_camera == null && _shuttle != null)
+			{
+				// Ищем узел Camera2D внутри сцены шаттла. Измени имя "Camera2D", если у тебя узел называется иначе!
+				_camera = _shuttle.GetNodeOrNull<Camera2D>("Camera2D") ?? _shuttle.GetNodeOrNull<Camera2D>("%Camera2D");
+				if (_camera != null)
+				{
+					GD.Print("Камера найдена напрямую через GetNode в _Process!");
+				}
+			}
+
+			// Если камера успешно нашлась и сетка есть — шлем координаты на GPU
+			if (_camera != null && _spaceGrid != null)
+			{
+				var shaderMaterial = _spaceGrid.Material as ShaderMaterial;
+				if (shaderMaterial != null)
+				{
+					// Передаем точные глобальные координаты камеры и ее зум
+					shaderMaterial.SetShaderParameter("camera_offset", _camera.GlobalPosition);
+					shaderMaterial.SetShaderParameter("camera_zoom", _camera.Zoom);
+
+					// Сглаживание муара: укрупняем шаг сетки при сильном отдалении
+					float dynamicGridSize = 100f;
+					if (_camera.Zoom.X < 0.6f) dynamicGridSize = 400f;
+					if (_camera.Zoom.X < 0.35f) dynamicGridSize = 1000f;
+
+					shaderMaterial.SetShaderParameter("grid_size", dynamicGridSize);
+				}
+			}
+		}
+
+		public void RegisterCamera(Camera2D playerCamera)
+		{
+			_camera = playerCamera;
+			GD.Print("Камера игрока успешно зарегистрирована через Сигнал:", _camera);
+		}
+
+		public override void _UnhandledInput(InputEvent @event)
+		{
+			base._UnhandledInput(@event);
+
+			if (@event is InputEventKey eventKey)
+			{
+				if (eventKey.Keycode == Godot.Key.F && eventKey.IsPressed())
+				{
+					if (_hud != null)
+					{
+						_hud.Visible = !_hud.Visible;
+						GD.Print($"Переключение интерфейса. Режим видимости: {_hud.Visible}");
+					}
+				}
+			}
 		}
 	}
-
-	// PROCESS
-	public override void _Process(double delta)
-	{
-		base._Process(delta);
-
-		if (_camera != null && _spaceGrid != null)
-		{
-			// 1. Базовый размер экрана
-			Vector2 baseScreenSize = GetViewportRect().Size;
-
-			// 2. Рассчитываем необходимый размер холста с учётом камеры
-			// Если камера отдаляется (значение Zoom уменьшается), мы делим базовый размер экрана
-			// на текущий зум камеры, чтобы физически увеличить прямоугольник сетки!
-			Vector2 requiredSize = baseScreenSize / _camera.Zoom;
-			// добавляем небольшой запас в 20%, чтобы края сетки гарантированно не вылезали на углах при поворотах
-			_spaceGrid.Size = requiredSize * 1.2f;
-
-			// 3. Центрируем холст сетки строго по камере, учитывая его НОВЫЙ динамический размер
-			_spaceGrid.GlobalPosition = _camera.GlobalPosition - (_spaceGrid.Size / 2f);
-
-			// 4. достаём материал сетки мира
-			var shaderMaterial = _spaceGrid.Material as ShaderMaterial;
-			// передаём глобальную позицию камеры в шейдер
-			shaderMaterial?.SetShaderParameter("camera_offset", _camera.GlobalPosition);
-			// Отправляем текущий вектор зума камеры в шейдер
-			shaderMaterial?.SetShaderParameter("camera_zoom", _camera.Zoom);
-		}
-	}
-
-	// Поиск камеры
-	// REGISTER CAMERA
-	public void RegisterCamera(Camera2D playerCamera)
-	{
-		_camera = playerCamera;
-		GD.Print("Камера игрока успешно зарегистрирована:", _camera);
-	}
-
 }
