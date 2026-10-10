@@ -7,9 +7,10 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_q7vo6"]
 shader = ExtResource("1_nnsk1")
 shader_parameter/camera_offset = Vector2(0, 0)
-shader_parameter/grid_size = 1000.0
+shader_parameter/grid_size = 100.0
 shader_parameter/grid_color = Color(0.2, 0.2, 0.2, 1)
 shader_parameter/line_thickness = 1.0
+shader_parameter/camera_zoom = Vector2(1, 1)
 
 [node name="World" type="Node2D" unique_id=1615865964]
 script = ExtResource("1_rwgxs")
