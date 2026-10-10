@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://dnko4xmlj3o4f"]
+
+[ext_resource type="Script" uid="uid://bdx31qkpl7f4c" path="res://entities/shuttle/Shuttle.cs" id="1_jk2cj"]
+
+[node name="Shuttle" type="RigidBody2D" unique_id=891464787]
+gravity_scale = 0.0
+script = ExtResource("1_jk2cj")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=600006094]
+unique_name_in_owner = true
+
+[node name="Line2D" type="Line2D" parent="." unique_id=1796113823]
+position = Vector2(-26, -16)
+points = PackedVector2Array(51, 45, 26, -3, 1, 45, 26, 29)
+closed = true
+width = 2.0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=290805438]
+position = Vector2(0, 3)
+polygon = PackedVector2Array(0, -21, -24, 25, 0, 10, 24, 25)

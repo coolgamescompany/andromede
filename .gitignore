@@ -1,0 +1,20 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+*.translation
+
+# Mono/C# specifics
+.mono/
+data_*/
+mono_crash.*.json
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+*.suo
+*.user
+*.sln
+*.csproj
