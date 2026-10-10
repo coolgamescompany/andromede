@@ -18,3 +18,9 @@ width = 2.0
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=290805438]
 position = Vector2(0, 3)
 polygon = PackedVector2Array(0, -21, -24, 25, 0, 10, 24, 25)
+
+[node name="TrailLine" type="Line2D" parent="." unique_id=1841437429]
+unique_name_in_owner = true
+width = 1.0
+default_color = Color(0, 0.89411765, 1, 0.75686276)
+texture_mode = 1
