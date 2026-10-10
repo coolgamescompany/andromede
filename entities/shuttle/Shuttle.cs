@@ -13,6 +13,9 @@ public partial class Shuttle : RigidBody2D
 	private float _minZoom = 0.3f; // Максимальное отдаление 
 	private float _maxZoom = 2.0f; // Максимальное приближение
 
+	// НАСТРОЙКИ ШАТТЛА
+	private float _maxVelocity = 5000f; // Максимальная скорость шаттла
+
 	// READY
 	public override void _Ready()
 	{
@@ -55,6 +58,8 @@ public partial class Shuttle : RigidBody2D
 			float currentZoom = Mathf.Lerp(_shuttleCamera.Zoom.X, _targetZoom, 10f * (float)delta);
 			_shuttleCamera.Zoom = new Vector2(currentZoom, currentZoom);
 		}
+
+		LinearVelocity = LinearVelocity.LimitLength(_maxVelocity);
 	}
 
 	// UNHANDLED INPUT
