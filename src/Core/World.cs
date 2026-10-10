@@ -14,7 +14,7 @@ public partial class World : Node2D
 		_spaceGrid = GetNode<ColorRect>("%SpaceGrid");
 
 		// Находим шаттл на сцене мира
-		RigidBody2D shuttleNode = GetNode<RigidBody2D>("%Shuttle");
+		var shuttleNode = GetNode<SpaceGame.Entities.Shuttle.Shuttle>("%Shuttle");
 
 		// Находим HUD
 		var hud = GetNode<SpaceGame.UI.HudController>("%HUD");

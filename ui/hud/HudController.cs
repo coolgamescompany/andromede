@@ -10,7 +10,10 @@ namespace SpaceGame.UI
 		private Label _systemInfoLabel;
 		private Label _flightDataLabel;
 
-		private RigidBody2D _shuttle;
+		// БЫЛО: private RigidBody2D _shuttle;
+		// СТАЛО:
+		private SpaceGame.Entities.Shuttle.Shuttle _shuttle;
+
 
 		// READY
 		public override void _Ready()
@@ -23,7 +26,7 @@ namespace SpaceGame.UI
 
 		// Метод, который мир или шаттл вызовет при старте, чтобы подключить приборы к кораблю
 		// INITIALIZE
-		public void Initialize(RigidBody2D shuttle)
+		public void Initialize(SpaceGame.Entities.Shuttle.Shuttle shuttle)
 		{
 			_shuttle = shuttle;
 		}
@@ -65,28 +68,28 @@ namespace SpaceGame.UI
 		// UPDATE FLIGHT DATA
 		private void UpdateFlightData()
 		{
-			// 1. Рассчитываем координаты (POS)
 			Vector2 pos = _shuttle.GlobalPosition;
-
-			// 2. Рассчитываем скорость (VEL). У RigidBody2D скорость хранится в LinearVelocity.
-			// Считаем общую скорость корабля (длину вектора) и округляем её
 			float velocityMagnitude = _shuttle.LinearVelocity.Length();
 
-			// 3. Рассчитываем тягу нитро (THR)
-			// Если зажат ЛКМ — тяга 100%, иначе 0%
-			int thrust = Input.IsMouseButtonPressed(MouseButton.Left) ? 100 : 0;
+			// ИСПРАВЛЕНО: Считываем плавную тягу напрямую из C# скрипта шаттла
+			// Умножаем на 100 и округляем до целого числа для вывода в процентах
+			int thrustPercent = Mathf.RoundToInt(_shuttle.CurrentThrust * 100f);
 
-			// 4. Задел на будущее (ALT / GRAVITY)
 			float altitude = 0.0f; 
 			float gravity = 0.0f;
 
+			float displayX = pos.X;
+			float displayY = pos.Y * -1f;
+
 			_flightDataLabel.Text = 
-				$"THR: {thrust}%\n" +
-				$"POS: X:{Mathf.Round(pos.X)} Y:{Mathf.Round(pos.Y) * -1f}\n" +
+				$"--- FLIGHT TELEMETRY ---\n" +
+				$"THR: {thrustPercent}%\n" + // Выводим плавные проценты тяги!
+				$"POS: X:{Mathf.Round(displayX)} Y:{Mathf.Round(displayY)}\n" +
 				$"VEL: {Mathf.Round(velocityMagnitude)} km/h\n" +
 				$"ALT: {altitude:F1}\n" +
 				$"GRV: {gravity:F2}g";
 		}
+
 
 	}
 }
