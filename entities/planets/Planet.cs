@@ -10,7 +10,7 @@ namespace SpaceGame.Entities.Planet
 		[Export] public float PlanetRadius { get; set; } = 1.0f;
 		[Export] public float PlanetMass { get; set; } = 1.0f;
 
-		[Export] public bool isCaptured { get; private set; } = false;
+		[Export] public bool isCaptured { get; set; } = false;
 		[Export] public float CaptureProgress { get; private set; } = 0.0f; 
 		[Export] public float CaptureSpeed { get; private set; } = 10.0f; 
 

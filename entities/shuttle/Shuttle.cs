@@ -122,20 +122,78 @@ namespace SpaceGame.Entities.Shuttle
 			}
 
 			// Стадия 2: ПОЛЕТ К ЦЕЛИ
+
+			// Стадия 2: ПОЛЕТ К ЦЕЛИ
 			if (distance > _landingThreshold)
 			{
 				AutopilotExeState = "APPROACHING";
-				_targetZoom = _minZoom; // Максимальное отдаление в глубоком космосе
+				_targetZoom = _minZoom;
 
-				float targetAngle = GlobalPosition.AngleToPoint(TargetPlanetObj.GlobalPosition) + Mathf.Pi / 2f;
+				// БАЗОВЫЙ ВЕКТОР НАПРАВЛЕНИЯ К ЦЕЛИ
+				Vector2 desiredDirection = toPlanet.Normalized();
+
+				// --- СИСТЕМА НАВИГАЦИОННОГО ОБХОДА ПРЕГРАД (ОБЛЕТ ПО ДУГЕ) ---
+				var allPlanets = GetTree().GetNodesInGroup("planets");
+				Planet.Planet obstaclePlanet = null;
+				float closestObstacleDist = float.MaxValue;
+
+				foreach (Node node in allPlanets)
+				{
+					if (node is Planet.Planet planet && planet != TargetPlanetObj)
+					{
+						// Считаем вектор от корабля до этой чужой планеты
+						Vector2 toObstacle = planet.GlobalPosition - GlobalPosition;
+						float distToObstacle = toObstacle.Length();
+
+						// Если планета находится близко и ПРЯМО НА НАШЕМ ПУТИ
+						// Проверяем это через скалярное произведение (Dot Product) векторов
+						if (distToObstacle < 4000f && desiredDirection.Dot(toObstacle.Normalized()) > 0.8f)
+						{
+							if (distToObstacle < closestObstacleDist)
+							{
+								closestObstacleDist = distToObstacle;
+								obstaclePlanet = planet;
+							}
+						}
+					}
+				}
+
+				// Если впереди обнаружена преграда — корректируем курс по дуге!
+				if (obstaclePlanet != null)
+				{
+					// Находим вектор направления на преграду
+					Vector2 toObstacleVec = obstaclePlanet.GlobalPosition - GlobalPosition;
+					
+					// Создаем перпендикулярный вектор (поворачиваем на 90 градусов), который задает дугу обхода
+					Vector2 avoidanceDirection = new Vector2(-toObstacleVec.Y, toObstacleVec.X).Normalized();
+
+					// Если корабль уже немного правее преграды, летим вправо, иначе влево (выбираем кратчайшую дугу)
+					if (desiredDirection.Cross(toObstacleVec.Normalized()) > 0f)
+					{
+						avoidanceDirection = -avoidanceDirection;
+					}
+
+					// Плавно смешиваем вектор цели и вектор обхода в зависимости от близости к преграде.
+					// Чем ближе преграда — тем сильнее корабль забирает вбок, очерчивая идеальную дугу облета!
+					float avoidanceWeight = Mathf.Clamp(1.0f - (closestObstacleDist / 4000f), 0.2f, 0.9f);
+					desiredDirection = desiredDirection.Lerp(avoidanceDirection, avoidanceWeight).Normalized();
+					
+					AutopilotExeState = "CHASING"; // Меняем статус на тактический маневр!
+				}
+
+				// ПРИМЕНЯЕМ ПОЛУЧЕННЫЙ ВЕКТОР ТРАЕКТОРИИ
+				// Поворачиваем нос корабля по скорректированной траектории дуги
+				float targetAngle = desiredDirection.Angle() + Mathf.Pi / 2f;
 				Rotation = targetAngle;
 
 				CurrentThrust = Mathf.Lerp(CurrentThrust, 1.0f, _thrustAcceleration * fDelta);
-				
-				// Плавный нарастающий разгон
 				_currentAutopilotSpeed = Mathf.MoveToward(_currentAutopilotSpeed, _maxVelocity, 800f * fDelta);
-				LinearVelocity = toPlanet.Normalized() * Mathf.Min(_currentAutopilotSpeed, distance * 1.2f);
+
+				// Ведем корабль строго по дуге маневра
+				LinearVelocity = desiredDirection * Mathf.Min(_currentAutopilotSpeed, distance * 1.2f);
 			}
+
+
 			else
 			{
 				// Стадия 3: МЯГКАЯ ПОСАДКА И СТЫКОВКА

@@ -12,6 +12,7 @@ namespace SpaceGame.Core
 		private SpaceGame.Entities.Shuttle.Shuttle _shuttle; // Сохраняем ссылку на шаттл
 		public static World Instance { get; private set; }
 		private Line2D _routeLine;
+		[Export] public PackedScene PlanetTemplate { get; set; }
 
 		public override void _Ready()
 		{
@@ -36,6 +37,11 @@ namespace SpaceGame.Core
 					_hud.Initialize(_shuttle);
 				}
 			}
+			// ИНИЦИАЛИЗАЦИЯ И ЗАПУСК ОДНОЙ СТРОКОЙ:
+			// Передаем текущий мир (this) и шаблон из инспектора (PlanetTemplate)
+			var generator = new SystemGenerator(this, PlanetTemplate);
+			generator.GenerateSystemPlanets();
+
 		}
 
 		public override void _Process(double delta)

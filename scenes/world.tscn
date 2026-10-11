@@ -16,6 +16,7 @@ shader_parameter/line_thickness = 1.0
 
 [node name="World" type="Node2D" unique_id=1615865964]
 script = ExtResource("1_rwgxs")
+PlanetTemplate = ExtResource("5_71j4m")
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=1270560565]
 layer = -1
@@ -37,12 +38,6 @@ unique_name_in_owner = true
 
 [node name="HUD" parent="CanvasLayer" unique_id=7211338 instance=ExtResource("4_k0juu")]
 unique_name_in_owner = true
-
-[node name="Planet" parent="." unique_id=593263768 instance=ExtResource("5_71j4m")]
-position = Vector2(1915, -1252)
-
-[node name="Planet2" parent="." unique_id=268864817 instance=ExtResource("5_71j4m")]
-position = Vector2(-27216, 17111)
 
 [node name="AutopilotRouteLine" type="Line2D" parent="." unique_id=1165317858]
 unique_name_in_owner = true
