@@ -40,3 +40,12 @@ unique_name_in_owner = true
 
 [node name="Planet" parent="." unique_id=593263768 instance=ExtResource("5_71j4m")]
 position = Vector2(1915, -1252)
+
+[node name="Planet2" parent="." unique_id=268864817 instance=ExtResource("5_71j4m")]
+position = Vector2(-27216, 17111)
+
+[node name="AutopilotRouteLine" type="Line2D" parent="." unique_id=1165317858]
+unique_name_in_owner = true
+z_index = -50
+width = 0.5
+default_color = Color(6.7383053e-06, 0.73501086, 0.91755676, 1)

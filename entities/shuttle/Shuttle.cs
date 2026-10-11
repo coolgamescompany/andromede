@@ -176,7 +176,10 @@ namespace SpaceGame.Entities.Shuttle
 
 			if (nearest != null)
 			{
-				TargetPlanetObj = nearest;
+				// ИСПРАВЛЕНО: Записываем найденный узел в TargetPlanetObj, 
+				// чтобы World.cs смог увидеть координаты планеты и натянуть линию!
+				TargetPlanetObj = nearest; 
+				
 				TargetPlanetName = nearest.PlanetName.ToUpper();
 				IsAutopilotActive = true;
 				AutopilotTimer = 0.0f;
