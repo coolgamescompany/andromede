@@ -32,27 +32,11 @@ namespace SpaceGame.Entities.Planet
 		{
 			base._PhysicsProcess(delta);
 
-			if (_isPlayerInsideZone && _isPlayerLanded && _shuttleBody != null && !isCaptured)
+			// Если автопилот усадил корабль на нашу поверхность
+			if (_isPlayerLanded && _shuttleBody != null && !isCaptured)
 			{
-				// --- МАГИЯ АВТОМАТИЧЕСКОЙ СТЫКОВКИ ---
-				// 1. Полностью гасим физическую скорость корабля, чтобы он не елозил по планете
-				_shuttleBody.LinearVelocity = Godot.Vector2.Zero;
-				_shuttleBody.AngularVelocity = 0f;
-
-				// 2. Рассчитываем вектор от центра планеты к кораблю (взгляд «наружу»)
-				Godot.Vector2 directionToShuttle = (_shuttleBody.GlobalPosition - GlobalPosition).Normalized();
-
-				// 3. Вычисляем угол, в который должен смотреть нос корабля (в радианах)
-				// В Godot угол вектора считается от оси X, поэтому добавляем поправку 90 градусов (Mathf.Pi / 2f)
-				float targetRotation = directionToShuttle.Angle() + Mathf.Pi / 2f;
-
-				// 4. Насильно фиксируем корабль в правильной позе посадки
-				_shuttleBody.Rotation = targetRotation;
-
-				// --- ЛОГИКА ЗАХВАТА ---
-				// Раз игра сама его припарковала и обнулила скорость, захват идет со 100% гарантией
 				CaptureProgress += CaptureSpeed * (float)delta;
-				GD.Print($"Корабль пристыкован. Захват планеты {PlanetName}: {Mathf.Round(CaptureProgress)}%");
+				GD.Print($"Шаттл пристыкован. Идет захват {PlanetName}: {Mathf.Round(CaptureProgress)}%");
 
 				if (CaptureProgress >= 100f)
 				{
@@ -61,10 +45,11 @@ namespace SpaceGame.Entities.Planet
 					OnPlanetCaptured();
 				}
 				
-				// Флаг сбрасываем, если контакт прервется — шаттл выйдет из режима парковки
+				// Сбрасываем флаг. Если шаттл взлетит на ЛКМ — контакт разорвется
 				_isPlayerLanded = false;
 			}
 		}
+
 
 		public void OnShuttleEnteredOrbit(Node2D body)
 		{

@@ -10,10 +10,12 @@ namespace SpaceGame.Core
 		private Camera2D _camera;
 		private HudController _hud;
 		private SpaceGame.Entities.Shuttle.Shuttle _shuttle; // Сохраняем ссылку на шаттл
-
+		public static World Instance { get; private set; }
+		
 		public override void _Ready()
 		{
 			base._Ready();
+			Instance = this; // Позволит шаттлу легко находить мир из любой точки кода
 			GD.Print("Космос запущен!");
 			
 			_spaceGrid = GetNode<ColorRect>("%SpaceGrid");
