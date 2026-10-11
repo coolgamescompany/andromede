@@ -20,12 +20,21 @@ namespace SpaceGame.Entities.Planet
 		private Area2D _gravityArea;
 		private bool _isPlayerInsideZone = false;
 
+		private Line2D _atmosphereLine;
+		private Color _initialPlanetColor;
+
 		public override void _Ready()
 		{
 			base._Ready();
 			_gravityArea = GetNode<Area2D>("%GravityArea");
 			_gravityArea.BodyEntered += OnShuttleEnteredOrbit;
 			_gravityArea.BodyExited += OnShuttleExitedOrbit;
+
+			_atmosphereLine = GetNode<Line2D>("%AtmosphereLine");
+			if (_atmosphereLine != null)
+			{
+				_initialPlanetColor = _atmosphereLine.DefaultColor;
+			}
 		}
 
 		public override void _PhysicsProcess(double delta)
@@ -37,6 +46,13 @@ namespace SpaceGame.Entities.Planet
 			{
 				CaptureProgress += CaptureSpeed * (float)delta;
 				GD.Print($"Шаттл пристыкован. Идет захват {PlanetName}: {Mathf.Round(CaptureProgress)}%");
+
+				if (_atmosphereLine != null)
+				{
+					float progressFactor = CaptureProgress / 100f;
+					_atmosphereLine.DefaultColor = _initialPlanetColor.Lerp(Colors.Green, progressFactor);
+				}
+
 
 				if (CaptureProgress >= 100f)
 				{
@@ -74,7 +90,8 @@ namespace SpaceGame.Entities.Planet
 		public void OnPlanetCaptured()
 		{
 			GD.Print($"Планета {PlanetName} полностью захвачена игроком!");
-			var atmosphere = GetNode<Line2D>("Line2D");
+			// ИСПРАВЛЕНО: Добавлен знак % для поиска по уникальному имени
+			var atmosphere = GetNode<Line2D>("%AtmosphereLine");
 			if (atmosphere != null)
 			{
 				atmosphere.DefaultColor = Colors.Green;

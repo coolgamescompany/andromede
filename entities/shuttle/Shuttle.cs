@@ -7,14 +7,12 @@ namespace SpaceGame.Entities.Shuttle
 {
 	public partial class Shuttle : RigidBody2D
 	{
-		// НАСТРОЙКИ КАМЕРЫ
 		private Camera2D _shuttleCamera;
 		private float _targetZoom = 1.0f;
 		private float _zoomSpeed = 0.1f;
 		private float _minZoom = 0.3f;
 		private float _maxZoom = 2.0f;
 
-		// НАСТРОЙКИ ШАТТЛА
 		private float _maxVelocity = 5000f;
 		private float _enginePower = 1500f;
 
@@ -22,23 +20,25 @@ namespace SpaceGame.Entities.Shuttle
 		private float _thrustAcceleration = 3.0f; 
 		private float _thrustDeceleration = 5.0f; 
 
-		// НАСТРОЙКИ СЛЕДА
 		private Line2D _trailLine;
 		private int _maxTrailPoints = 1000;
 		private ImageTexture _dashTexture;
 
-		// СОСТОЯНИЯ АВТОПИЛОТА
+		// СОСТОЯНИЯ АВТОПИЛОТА ДЛЯ HUD
 		public bool IsAutopilotActive { get; private set; } = false;
-		private SpaceGame.Entities.Planet.Planet _targetPlanet = null;
-		private float _landingThreshold = 1050f; // Физический радиус посадки (чуть больше радиуса планеты 1000)
+		public string AutopilotExeState { get; private set; } = "OFF"; 
+		public string TargetPlanetName { get; private set; } = "NONE";
+		public float AutopilotTimer { get; private set; } = 0.0f;
 
-		[Signal]
-		public delegate void CameraReadyEventHandler(Camera2D camera);
+		public SpaceGame.Entities.Planet.Planet TargetPlanetObj { get; private set; } = null;
+		private float _landingThreshold = 1050f;
+		private float _currentAutopilotSpeed = 0f; // Для плавного разгона автопилота
+
+		[Signal] public delegate void CameraReadyEventHandler(Camera2D camera);
 
 		public override void _Ready()
 		{
 			base._Ready();
-
 			_shuttleCamera = GetNode<Camera2D>("%Camera2D");
 			EmitSignal(SignalName.CameraReady, _shuttleCamera);
 
@@ -58,7 +58,7 @@ namespace SpaceGame.Entities.Shuttle
 			base._PhysicsProcess(delta);
 			float fDelta = (float)delta;
 
-			if (IsAutopilotActive && _targetPlanet != null)
+			if (IsAutopilotActive && TargetPlanetObj != null)
 			{
 				ExecuteAutopilotLogic(fDelta);
 			}
@@ -67,92 +67,94 @@ namespace SpaceGame.Entities.Shuttle
 				ExecuteManualFlightLogic(fDelta);
 			}
 
-			// Плавный зум камеры к целевому масштабу
 			if (_shuttleCamera != null)
 			{
-				float currentZoom = Mathf.Lerp(_shuttleCamera.Zoom.X, _targetZoom, 5f * fDelta);
-				_shuttleCamera.Zoom = new Vector2(currentZoom, currentZoom);
+				_shuttleCamera.Zoom = _shuttleCamera.Zoom.Lerp(new Vector2(_targetZoom, _targetZoom), 3f * fDelta);
 			}
 
 			LinearVelocity = LinearVelocity.LimitLength(_maxVelocity);
 			UpdateTrailEffect();
 		}
 
-		// РУЧНОЙ РЕЖИМ ПОЛЕТА
 		private void ExecuteManualFlightLogic(float fDelta)
 		{
-			// Поворот за мышкой
 			Vector2 mousePos = GetGlobalMousePosition();
-			float targetAngle = GlobalPosition.AngleToPoint(mousePos) + Mathf.Pi / 2f;
-			Rotation = targetAngle;
+			Rotation = GlobalPosition.AngleToPoint(mousePos) + Mathf.Pi / 2f;
 
 			float targetThrust = 0.0f;
-			if (Input.IsMouseButtonPressed(MouseButton.Left))
-			{
-				targetThrust = 1.0f;
-			}
+			if (Input.IsMouseButtonPressed(MouseButton.Left)) targetThrust = 1.0f;
 
 			float lerpSpeed = targetThrust > CurrentThrust ? _thrustAcceleration : _thrustDeceleration;
 			CurrentThrust = Mathf.Lerp(CurrentThrust, targetThrust, lerpSpeed * fDelta);
 			ApplyCentralForce(-Transform.Y * _enginePower * CurrentThrust);
 		}
 
-		// РЕЖИМ АВТОПИЛОТА (КИНЕМАТОГРАФИЧНЫЙ)
 		private void ExecuteAutopilotLogic(float fDelta)
 		{
-			// Если кто-то захватил планету пока мы летели — сбрасываем цель
-			if (_targetPlanet.isCaptured)
+			AutopilotTimer += fDelta;
+
+			// АРХИТЕКТУРНЫЙ АПДЕЙТ: Если текущая планета УСПЕШНО ЗАХВАЧЕНА
+			if (TargetPlanetObj.isCaptured)
 			{
-				CancelAutopilot();
+				GD.Print($"Цель {TargetPlanetName} захвачена. Автопилот ищет следующую планету сектора...");
+				
+				// Сбрасываем старые параметры, но НЕ выключаем IsAutopilotActive!
+				TargetPlanetObj = null;
+				TargetPlanetName = "NONE";
+				_currentAutopilotSpeed = 0f;
+				AutopilotTimer = 0.0f;
+				
+				// Мгновенно запускаем поиск новой незахваченной планеты
+				FindNearestUncapturedPlanet();
 				return;
 			}
 
-			Vector2 toPlanet = _targetPlanet.GlobalPosition - GlobalPosition;
+			Vector2 toPlanet = TargetPlanetObj.GlobalPosition - GlobalPosition;
 			float distance = toPlanet.Length();
 
-			// 1. УПРАВЛЕНИЕ КАМЕРОЙ: Чем дальше планета, тем сильнее отдаляем обзор!
-			// Если до планеты далеко, выставляем максимальное отдаление _minZoom (0.3)
-			if (distance > 3000f)
+			// Стадия 1: ВЫБОР ЦЕЛИ (Задержка 1.5 сек перед каждым новым прыжком)
+			if (AutopilotTimer < 1.5f)
 			{
-				_targetZoom = _minZoom;
-			}
-			else
-			{
-				// При подлете плавно возвращаем зум к стандартному (1.0)
-				_targetZoom = Mathf.Lerp(_targetZoom, 1.0f, 2f * fDelta);
+				AutopilotExeState = "SELECTING...";
+				LinearVelocity = LinearVelocity.Lerp(Vector2.Zero, 3f * fDelta);
+				_targetZoom = 1.0f; // Возвращаем камеру к норме во время расчетов
+				return;
 			}
 
-			// 2. ДВИЖЕНИЕ К ЦЕЛИ
+			// Стадия 2: ПОЛЕТ К ЦЕЛИ
 			if (distance > _landingThreshold)
 			{
-				// Смотрим строго на центр планеты
-				float targetAngle = GlobalPosition.AngleToPoint(_targetPlanet.GlobalPosition) + Mathf.Pi / 2f;
+				AutopilotExeState = "APPROACHING";
+				_targetZoom = _minZoom; // Максимальное отдаление в глубоком космосе
+
+				float targetAngle = GlobalPosition.AngleToPoint(TargetPlanetObj.GlobalPosition) + Mathf.Pi / 2f;
 				Rotation = targetAngle;
 
-				// Разгоняем реактор на полную мощность (100% тяги)
 				CurrentThrust = Mathf.Lerp(CurrentThrust, 1.0f, _thrustAcceleration * fDelta);
 				
-				// Толкаем корабль вперед к планете. Отключаем стандартную физику скольжения, 
-				// плавно гася боковые сносы (честный полет по рельсам автопилота)
-				LinearVelocity = toPlanet.Normalized() * Mathf.Min(_maxVelocity, distance * 1.5f);
+				// Плавный нарастающий разгон
+				_currentAutopilotSpeed = Mathf.MoveToward(_currentAutopilotSpeed, _maxVelocity, 800f * fDelta);
+				LinearVelocity = toPlanet.Normalized() * Mathf.Min(_currentAutopilotSpeed, distance * 1.2f);
 			}
 			else
 			{
-				// 3. ФИНАЛЬНАЯ ИДЕАЛЬНАЯ СТЫКОВКА (МЫ ПРИЛЕТЕЛИ!)
+				// Стадия 3: МЯГКАЯ ПОСАДКА И СТЫКОВКА
+				AutopilotExeState = "LANDED";
+				_targetZoom = _maxZoom; // Максимальное приближение камеры при посадке!
+
 				LinearVelocity = Vector2.Zero;
 				AngularVelocity = 0f;
 				CurrentThrust = 0f;
 
-				// Разворачиваем корабль спиной к планете (лицом в космос!)
-				Vector2 faceToSpace = (GlobalPosition - _targetPlanet.GlobalPosition).Normalized();
+				Vector2 faceToSpace = (GlobalPosition - TargetPlanetObj.GlobalPosition).Normalized();
 				Rotation = faceToSpace.Angle() + Mathf.Pi / 2f;
 
-				// Передаем планете сигнал, что мы успешно пристыковались
-				_targetPlanet.RegisterPlayerLanding(this);
+				// Передаем планете сигнал, что мы сидим на ней
+				TargetPlanetObj.RegisterPlayerLanding(this);
 			}
 		}
 
-		// ПОИСК БЛИЖАЙШЕЙ НЕЗАХВАЧЕННОЙ ПЛАНЕТЫ
+
 		private void FindNearestUncapturedPlanet()
 		{
 			var nodes = GetTree().GetNodesInGroup("planets");
@@ -174,46 +176,50 @@ namespace SpaceGame.Entities.Shuttle
 
 			if (nearest != null)
 			{
-				_targetPlanet = nearest;
+				TargetPlanetObj = nearest;
+				TargetPlanetName = nearest.PlanetName.ToUpper();
 				IsAutopilotActive = true;
-				GD.Print($"Автопилот активирован! Курс на планету: {_targetPlanet.PlanetName}. Дистанция: {Mathf.Round(minDistance)}");
+				AutopilotTimer = 0.0f;
+				_currentAutopilotSpeed = LinearVelocity.Length();
+				GD.Print($"Новая цель захвата определена: {TargetPlanetName}!");
 			}
 			else
 			{
-				GD.Print("В данном секторе нет незахваченных планет!");
+				// Если планет больше нет — вот теперь со спокойной душой отключаемся
+				CancelAutopilot();
+				GD.Print("ВСЕ ПЛАНЕТЫ СЕКТОРА ЗАХВАЧЕНЫ! Галактический доминион установлен.");
 			}
 		}
+
 
 		public void CancelAutopilot()
 		{
 			IsAutopilotActive = false;
-			_targetPlanet = null;
-			_targetZoom = 1.0f;
+			TargetPlanetObj = null;
+			TargetPlanetName = "NONE";
+			AutopilotExeState = "OFF";
+			
+			// Принудительно возвращаем зум к 100% масштабу, 
+			// но теперь один раз при отключении, а не каждый кадр!
+			_targetZoom = 1.0f; 
 			GD.Print("Автопилот отключен. Ручное управление восстановлено.");
 		}
+
 
 		public override void _UnhandledInput(InputEvent @event)
 		{
 			base._UnhandledInput(@event);
 
-			// Включение автопилота на физическую клавишу А
 			if (@event is InputEventKey eventKey && eventKey.Keycode == Godot.Key.A && eventKey.IsPressed())
 			{
-				if (IsAutopilotActive)
-				{
-					CancelAutopilot();
-				}
-				else
-				{
-					FindNearestUncapturedPlanet();
-				}
+				if (IsAutopilotActive) CancelAutopilot();
+				else FindNearestUncapturedPlanet();
 			}
 
-			// Любой ручной щелчок колесика мыши мгновенно отключает автопилот
 			if (@event.IsActionPressed("wheel_up") || @event.IsActionPressed("wheel_down"))
 			{
 				if (IsAutopilotActive) CancelAutopilot();
-
+				
 				if (@event.IsActionPressed("wheel_up")) _targetZoom += _zoomSpeed;
 				if (@event.IsActionPressed("wheel_down")) _targetZoom -= _zoomSpeed;
 				_targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
