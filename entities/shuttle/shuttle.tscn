@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bdx31qkpl7f4c" path="res://entities/shuttle/Shuttle.cs" id="1_jk2cj"]
 
 [node name="Shuttle" type="RigidBody2D" unique_id=891464787]
+z_index = 10
 gravity_scale = 0.0
 contact_monitor = true
 max_contacts_reported = 4

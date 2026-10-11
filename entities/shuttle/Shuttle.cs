@@ -161,25 +161,26 @@ namespace SpaceGame.Entities.Shuttle
 				// Если впереди обнаружена преграда — корректируем курс по дуге!
 				if (obstaclePlanet != null)
 				{
-					// Находим вектор направления на преграду
 					Vector2 toObstacleVec = obstaclePlanet.GlobalPosition - GlobalPosition;
-					
-					// Создаем перпендикулярный вектор (поворачиваем на 90 градусов), который задает дугу обхода
 					Vector2 avoidanceDirection = new Vector2(-toObstacleVec.Y, toObstacleVec.X).Normalized();
 
-					// Если корабль уже немного правее преграды, летим вправо, иначе влево (выбираем кратчайшую дугу)
 					if (desiredDirection.Cross(toObstacleVec.Normalized()) > 0f)
 					{
 						avoidanceDirection = -avoidanceDirection;
 					}
 
-					// Плавно смешиваем вектор цели и вектор обхода в зависимости от близости к преграде.
-					// Чем ближе преграда — тем сильнее корабль забирает вбок, очерчивая идеальную дугу облета!
 					float avoidanceWeight = Mathf.Clamp(1.0f - (closestObstacleDist / 4000f), 0.2f, 0.9f);
 					desiredDirection = desiredDirection.Lerp(avoidanceDirection, avoidanceWeight).Normalized();
 					
-					AutopilotExeState = "CHASING"; // Меняем статус на тактический маневр!
+					AutopilotExeState = "CHASING"; // Включаем статус маневра
+
+					// --- ФИЗИЧЕСКИЙ ФИКС: БОКОВЫЕ МАНЕВРОВЫЕ ДВИГАТЕЛИ ---
+					// Чем ближе корабль к чужой планете, тем мощнее боковые двигатели 
+					// будут ОТТАЛКИВАТЬ шаттл вбок (по вектору avoidanceDirection) подальше от коллизии!
+					float lateralThrustPower = 1800f * (1.0f - (closestObstacleDist / 4000f));
+					ApplyCentralForce(avoidanceDirection * lateralThrustPower);
 				}
+
 
 				// ПРИМЕНЯЕМ ПОЛУЧЕННЫЙ ВЕКТОР ТРАЕКТОРИИ
 				// Поворачиваем нос корабля по скорректированной траектории дуги

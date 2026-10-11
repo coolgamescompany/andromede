@@ -90,13 +90,23 @@ namespace SpaceGame.Entities.Planet
 		public void OnPlanetCaptured()
 		{
 			GD.Print($"Планета {PlanetName} полностью захвачена игроком!");
-			// ИСПРАВЛЕНО: Добавлен знак % для поиска по уникальному имени
+			
 			var atmosphere = GetNode<Line2D>("%AtmosphereLine");
 			if (atmosphere != null)
 			{
 				atmosphere.DefaultColor = Colors.Green;
 			}
+
+			// ХИТРЫЙ ГЕЙМДИЗАЙНЕРСКИЙ ФИКС (Твой вариант, доведённый до ума!):
+			// Находим узел коллизии по его реальному имени на сцене
+			var collisionPlanet = GetNode<CollisionShape2D>("PhysicalCollision");
+			if (collisionPlanet != null)
+			{
+				// Выключаем физическую форму, делая планету «призраком» для шаттла!
+				collisionPlanet.Disabled = true;
+			}
 		}
+
 
 		// Этот метод автоматически вызывает сам Шаттл при физическом касании
 		public void RegisterPlayerLanding(RigidBody2D shuttle)
