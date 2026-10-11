@@ -13,13 +13,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_e0nub")
 
-[node name="SystemInfoLabel" type="Label" parent="." unique_id=270016574]
+[node name="SystemInfoLabel" type="RichTextLabel" parent="." unique_id=1553688858]
 unique_name_in_owner = true
 layout_mode = 1
-offset_right = 40.0
+offset_right = 400.0
 offset_bottom = 23.0
-theme_override_fonts/font = ExtResource("2_w75iv")
+theme_override_fonts/normal_font = ExtResource("2_w75iv")
+bbcode_enabled = true
 text = "SystemInfoLabel"
+fit_content = true
+scroll_active = false
 
 [node name="FlightDataLabel" type="Label" parent="." unique_id=1720364987]
 unique_name_in_owner = true

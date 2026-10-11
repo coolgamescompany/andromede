@@ -32,9 +32,22 @@ namespace SpaceGame.Core
 			var rand = new Random();
 			GD.Print($"--- STARTING PROCEDURAL GENERATION: {_totalPlanetsToSpawn} PLANETS ---");
 
-			// Создаем временный список для хранения позиций уже созданных планет
 			List<Vector2> spawnedPositions = new List<Vector2>();
-			float minDistanceBetweenPlanets = 3500f; // Безопасное расстояние в пикселях между планетами
+			float minDistanceBetweenPlanets = 3500f;
+
+			// Массив красивых неоновых цветов для атмосфер планет
+			Color[] neonColors = new Color[] {
+				Colors.Cyan,
+				Colors.Magenta,
+				Colors.Orange,
+				Colors.Red,
+				Colors.Purple,
+				Colors.DeepSkyBlue,
+				Colors.Yellow
+			};
+
+			// Массив возможных Sci-Fi классов планет
+			string[] planetClasses = new string[] { "M-Class (Habitable)", "J-Class (Gas Giant)", "Ice-World", "Volcanic", "Desert-Class" };
 
 			for (int i = 1; i <= _totalPlanetsToSpawn; i++)
 			{
@@ -46,9 +59,8 @@ namespace SpaceGame.Core
 
 				Vector2 spawnPosition = Vector2.Zero;
 				bool isValidPosition = false;
-				int attempts = 0; // Предохранитель от бесконечного цикла
+				int attempts = 0;
 
-				// ЦИКЛ ПОДБОРА КООРДИНАТ: Крутимся, пока не найдем чистое место
 				while (!isValidPosition && attempts < 100)
 				{
 					attempts++;
@@ -56,33 +68,45 @@ namespace SpaceGame.Core
 					float distance = (float)(rand.NextDouble()) * (_spawnRadiusMax - _spawnRadiusMin) + _spawnRadiusMin;
 					spawnPosition = new Vector2(Mathf.Cos(angle) * distance, Mathf.Sin(angle) * distance);
 
-					isValidPosition = true; // Считаем позицию хорошей, пока не доказано обратное
-
-					// Проверяем расстояние до КАЖДОЙ уже созданной планеты
+					isValidPosition = true;
 					foreach (Vector2 existingPos in spawnedPositions)
 					{
 						if (spawnPosition.DistanceTo(existingPos) < minDistanceBetweenPlanets)
 						{
-							isValidPosition = false; // Слишком близко! Заходим на новый круг подбора
+							isValidPosition = false;
 							break;
 						}
 					}
 				}
 
-				// Запоминаем утвержденную позицию
 				spawnedPositions.Add(spawnPosition);
 
-				planetInstance.GlobalPosition = spawnPosition;
+				// РАЗНООБРАЗИЕ ПАРАМЕТРОВ:
 				planetInstance.PlanetName = $"Sector-Star-PX-{i}";
+				planetInstance.PlanetClass = planetClasses[rand.Next(planetClasses.Length)];
+				
+				// Радиус от 0.5 до 3.5, масса зависит от радиуса + небольшой случайный множитель
+				planetInstance.PlanetRadius = 0.5f + (float)rand.NextDouble() * 3.0f;
+				planetInstance.PlanetMass = planetInstance.PlanetRadius * (0.8f + (float)rand.NextDouble() * 0.4f);
+
+				planetInstance.GlobalPosition = spawnPosition;
 				planetInstance.ZIndex = -10;
 				planetInstance.AddToGroup("planets");
 
 				_parentWorld.AddChild(planetInstance);
 
-				GD.Print($"Planet {planetInstance.PlanetName} spawned cleanly at X:{Mathf.Round(spawnPosition.X)} Y:{Mathf.Round(spawnPosition.Y)} after {attempts} attempts.");
+				// СРАЗУ КРАСИМ АТМОСФЕРУ: Находим Line2D на свежесозданной планете и красим в случайный цвет
+				var atmosphere = planetInstance.GetNodeOrNull<Line2D>("Line2D") ?? planetInstance.GetNodeOrNull<Line2D>("%Line2D");
+				if (atmosphere != null)
+				{
+					atmosphere.DefaultColor = neonColors[rand.Next(neonColors.Length)];
+				}
+
+				GD.Print($"Planet {planetInstance.PlanetName} spawned smoothly.");
 			}
 			GD.Print("--- PROCEDURAL GENERATION COMPLETED ---");
 		}
+
 
 
 
