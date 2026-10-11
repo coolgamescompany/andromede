@@ -4,6 +4,8 @@
 
 [node name="Shuttle" type="RigidBody2D" unique_id=891464787]
 gravity_scale = 0.0
+contact_monitor = true
+max_contacts_reported = 4
 script = ExtResource("1_jk2cj")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=600006094]

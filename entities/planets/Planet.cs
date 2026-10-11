@@ -5,42 +5,54 @@ namespace SpaceGame.Entities.Planet
 {
 	public partial class Planet : StaticBody2D
 	{
-		// ЭКСПОРТ ПАРАМЕТРОВ
 		[Export] public string PlanetName { get; set; } = "Unknown";
-		[Export] public string PlanetClass {get; set; } = "M-Class (Habitable)";
+		[Export] public string PlanetClass { get; set; } = "M-Class (Habitable)";
 		[Export] public float PlanetRadius { get; set; } = 1.0f;
 		[Export] public float PlanetMass { get; set; } = 1.0f;
 
-		// Состояние захвата
 		[Export] public bool isCaptured { get; private set; } = false;
-		[Export] public float CaptureProgress { get; private set; } = 0.0f; // от 0 до 100
-		[Export] public float CaptureSpeed { get; private set; } = 10.0f; // процент захвата в секунду
+		[Export] public float CaptureProgress { get; private set; } = 0.0f; 
+		[Export] public float CaptureSpeed { get; private set; } = 10.0f; 
+
+		private bool _isPlayerLanded = false;
+		private RigidBody2D _shuttleBody = null;
 
 		private Area2D _gravityArea;
 		private bool _isPlayerInsideZone = false;
 
-		// READY
 		public override void _Ready()
 		{
 			base._Ready();
-
 			_gravityArea = GetNode<Area2D>("%GravityArea");
-
-			// подписываемся на события входа и выхода корабля в зону орбиты планеты
 			_gravityArea.BodyEntered += OnShuttleEnteredOrbit;
 			_gravityArea.BodyExited += OnShuttleExitedOrbit;
 		}
 
-		// PHYSICS PROCESS
 		public override void _PhysicsProcess(double delta)
 		{
 			base._PhysicsProcess(delta);
 
-			// Логика постепенного захвата планеты, если игрок находиться на её орбите
-			if (_isPlayerInsideZone && !isCaptured)
+			if (_isPlayerInsideZone && _isPlayerLanded && _shuttleBody != null && !isCaptured)
 			{
+				// --- МАГИЯ АВТОМАТИЧЕСКОЙ СТЫКОВКИ ---
+				// 1. Полностью гасим физическую скорость корабля, чтобы он не елозил по планете
+				_shuttleBody.LinearVelocity = Godot.Vector2.Zero;
+				_shuttleBody.AngularVelocity = 0f;
+
+				// 2. Рассчитываем вектор от центра планеты к кораблю (взгляд «наружу»)
+				Godot.Vector2 directionToShuttle = (_shuttleBody.GlobalPosition - GlobalPosition).Normalized();
+
+				// 3. Вычисляем угол, в который должен смотреть нос корабля (в радианах)
+				// В Godot угол вектора считается от оси X, поэтому добавляем поправку 90 градусов (Mathf.Pi / 2f)
+				float targetRotation = directionToShuttle.Angle() + Mathf.Pi / 2f;
+
+				// 4. Насильно фиксируем корабль в правильной позе посадки
+				_shuttleBody.Rotation = targetRotation;
+
+				// --- ЛОГИКА ЗАХВАТА ---
+				// Раз игра сама его припарковала и обнулила скорость, захват идет со 100% гарантией
 				CaptureProgress += CaptureSpeed * (float)delta;
-				GD.Print($"Захват планеты {PlanetName}: {Mathf.Round(CaptureProgress)}%");
+				GD.Print($"Корабль пристыкован. Захват планеты {PlanetName}: {Mathf.Round(CaptureProgress)}%");
 
 				if (CaptureProgress >= 100f)
 				{
@@ -48,10 +60,12 @@ namespace SpaceGame.Entities.Planet
 					isCaptured = true;
 					OnPlanetCaptured();
 				}
+				
+				// Флаг сбрасываем, если контакт прервется — шаттл выйдет из режима парковки
+				_isPlayerLanded = false;
 			}
 		}
 
-		// ON SHUTTLE ENTERED ORBIT
 		public void OnShuttleEnteredOrbit(Node2D body)
 		{
 			if (body.Name == "Shuttle")
@@ -61,22 +75,32 @@ namespace SpaceGame.Entities.Planet
 			}
 		}
 
-		// ON SHUTTLE EXITED ORBIT
 		public void OnShuttleExitedOrbit(Node2D body)
 		{
 			if (body.Name == "Shuttle")
 			{
 				_isPlayerInsideZone = false;
+				_isPlayerLanded = false;
+				_shuttleBody = null;
 				GD.Print($"Шаттл покинул орбиту планеты {PlanetName}");
 			}
 		}
 
-		// ON PLANET CAPTURED
 		public void OnPlanetCaptured()
 		{
 			GD.Print($"Планета {PlanetName} полностью захвачена игроком!");
+			var atmosphere = GetNode<Line2D>("Line2D");
+			if (atmosphere != null)
+			{
+				atmosphere.DefaultColor = Colors.Green;
+			}
 		}
 
-
+		// Этот метод автоматически вызывает сам Шаттл при физическом касании
+		public void RegisterPlayerLanding(RigidBody2D shuttle)
+		{
+			_shuttleBody = shuttle;
+			_isPlayerLanded = true;
+		}
 	}
 }

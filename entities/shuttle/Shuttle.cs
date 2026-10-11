@@ -67,6 +67,9 @@ namespace SpaceGame.Entities.Shuttle
 			_dashTexture = ImageTexture.CreateFromImage(img);
 			_trailLine.Texture = _dashTexture;
 			_trailLine.TextureRepeat = CanvasItem.TextureRepeatEnum.Enabled;
+
+			// ПОДПИСЫВАЕМСЯ НА СИГНАЛ СТОЛКНОВЕНИЯ ШАТТЛА
+			this.BodyEntered += OnShuttleCollided;
 		}
 
 		// ==========================================
@@ -162,6 +165,17 @@ namespace SpaceGame.Entities.Shuttle
 			}
 
 			_targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
+		}
+
+		// ==========================================
+		// 7. ON SHUTTLE COLLIDED
+		// ==========================================
+		private void OnShuttleCollided(Node body)
+		{
+			if (body is SpaceGame.Entities.Planet.Planet landedPlanet)
+			{
+				landedPlanet.RegisterPlayerLanding(this);
+			}
 		}
 	}
 }
