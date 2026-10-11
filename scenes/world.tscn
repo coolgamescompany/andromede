@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://cbdrv0ogb0orj" path="res://src/Core/World.cs" id="1_rwgxs"]
 [ext_resource type="PackedScene" uid="uid://dnko4xmlj3o4f" path="res://entities/shuttle/shuttle.tscn" id="3_4wyf3"]
 [ext_resource type="PackedScene" uid="uid://dp3os4rpa5pew" path="res://ui/hud/hud.tscn" id="4_k0juu"]
+[ext_resource type="PackedScene" uid="uid://d2jwqdve70ix2" path="res://entities/planets/planet.tscn" id="5_71j4m"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_q7vo6"]
 shader = ExtResource("1_nnsk1")
@@ -36,3 +37,6 @@ unique_name_in_owner = true
 
 [node name="HUD" parent="CanvasLayer" unique_id=7211338 instance=ExtResource("4_k0juu")]
 unique_name_in_owner = true
+
+[node name="Planet" parent="." unique_id=593263768 instance=ExtResource("5_71j4m")]
+position = Vector2(1915, -1252)

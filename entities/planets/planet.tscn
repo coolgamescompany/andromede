@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://d2jwqdve70ix2"]
+
+[ext_resource type="Script" uid="uid://d3mintt1feynp" path="res://entities/planets/Planet.cs" id="1_50jw3"]
+[ext_resource type="Script" uid="uid://dnm7yd3eg8vd8" path="res://entities/planets/circle.gd" id="1_uqhkw"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_mdck7"]
+radius = 1007.00793
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_q7vo6"]
+radius = 2604.0276
+
+[node name="Planet" type="StaticBody2D" unique_id=593263768]
+script = ExtResource("1_50jw3")
+
+[node name="Line2D" type="Line2D" parent="." unique_id=1845805906]
+points = PackedVector2Array(1000, 0, 995.1847, 98.01714, 980.7853, 195.09032, 956.94037, 290.28467, 923.8795, 382.68344, 881.92126, 471.39676, 831.4696, 555.57025, 773.01044, 634.39325, 707.10675, 707.10675, 634.39325, 773.01044, 555.57025, 831.4696, 471.39676, 881.92126, 382.68344, 923.8795, 290.28467, 956.94037, 195.09032, 980.7853, 98.01714, 995.1847, 6.123032e-14, 1000, -98.01714, 995.1847, -195.09032, 980.7853, -290.28467, 956.94037, -382.68344, 923.8795, -471.39676, 881.92126, -555.57025, 831.4696, -634.39325, 773.01044, -707.10675, 707.10675, -773.01044, 634.39325, -831.4696, 555.57025, -881.92126, 471.39676, -923.8795, 382.68344, -956.94037, 290.28467, -980.7853, 195.09032, -995.1847, 98.01714, -1000, 1.2246064e-13, -995.1847, -98.01714, -980.7853, -195.09032, -956.94037, -290.28467, -923.8795, -382.68344, -881.92126, -471.39676, -831.4696, -555.57025, -773.01044, -634.39325, -707.10675, -707.10675, -634.39325, -773.01044, -555.57025, -831.4696, -471.39676, -881.92126, -382.68344, -923.8795, -290.28467, -956.94037, -195.09032, -980.7853, -98.01714, -995.1847, -1.8369095e-13, -1000, 98.01714, -995.1847, 195.09032, -980.7853, 290.28467, -956.94037, 382.68344, -923.8795, 471.39676, -881.92126, 555.57025, -831.4696, 634.39325, -773.01044, 707.10675, -707.10675, 773.01044, -634.39325, 831.4696, -555.57025, 881.92126, -471.39676, 923.8795, -382.68344, 956.94037, -290.28467, 980.7853, -195.09032, 995.1847, -98.01714)
+closed = true
+width = 1.0
+default_color = Color(0.440171, 0.71520567, 1, 1)
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+script = ExtResource("1_uqhkw")
+radius = 1000.0
+
+[node name="PhysicalCollision" type="CollisionShape2D" parent="." unique_id=1069849994]
+shape = SubResource("CircleShape2D_mdck7")
+
+[node name="GravityArea" type="Area2D" parent="." unique_id=1009793588]
+unique_name_in_owner = true
+gravity_space_override = 1
+gravity_point = true
+gravity = 400.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GravityArea" unique_id=18957668]
+shape = SubResource("CircleShape2D_q7vo6")
