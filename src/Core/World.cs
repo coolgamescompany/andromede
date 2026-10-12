@@ -48,18 +48,14 @@ namespace SpaceGame.Core
 		{
 			base._Process(delta);
 
-			// 1. ЖЕЛЕЗОБЕТОННЫЙ ХАК: Ищем камеру, если она пропала
+			// 1. Камера должна приходить через сигнал CameraReady → RegisterCamera
 			if (_camera == null && _shuttle != null)
 			{
-				_camera = _shuttle.GetNodeOrNull<Camera2D>("Camera2D") ?? _shuttle.GetNodeOrNull<Camera2D>("%Camera2D");
-				if (_camera != null)
-				{
-					GD.Print("Камера найдена напрямую через GetNode в _Process!");
-				}
-			} // <-- ИСПРАВЛЕНО: Закрываем блок поиска камеры ЗДЕСЬ, а не в самом конце!
+				_camera = _shuttle.GetNodeOrNull<Camera2D>("%Camera2D");
+			}
 
 			// 2. ИСПРАВЛЕННЫЙ РЕНДЕР ЛИНИИ МАРШРУТА
-			var shuttleNode = GetNode<SpaceGame.Entities.Shuttle.Shuttle>("%Shuttle");
+			var shuttleNode = _shuttle;
 			if (_routeLine != null && shuttleNode != null)
 			{
 				// ХИТРЫЙ ГЕЙМДИЗАЙНЕРСКИЙ ФИКС:

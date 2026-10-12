@@ -51,58 +51,60 @@ namespace SpaceGame.Core
 
 			for (int i = 1; i <= _totalPlanetsToSpawn; i++)
 			{
-				var planetInstance = _planetTemplate.Instantiate<SpaceGame.Entities.Planet.Planet>();
-				if (planetInstance != null)
+
+			var planetInstance = _planetTemplate.Instantiate<SpaceGame.Entities.Planet.Planet>();
+			if (planetInstance == null)
+			{
+				GD.PrintErr($"SYSTEM_GENERATOR_ERROR: Failed to instantiate planet #{i}");
+				continue;
+			}
+
+			planetInstance.isCaptured = false;
+
+			Vector2 spawnPosition = Vector2.Zero;
+			bool isValidPosition = false;
+			int attempts = 0;
+
+			while (!isValidPosition && attempts < 100)
+			{
+				attempts++;
+				float angle = (float)(rand.NextDouble() * Mathf.Tau);
+				float distance = (float)(rand.NextDouble()) * (_spawnRadiusMax - _spawnRadiusMin) + _spawnRadiusMin;
+				spawnPosition = new Vector2(Mathf.Cos(angle) * distance, Mathf.Sin(angle) * distance);
+
+				isValidPosition = true;
+				foreach (Vector2 existingPos in spawnedPositions)
 				{
-					planetInstance.isCaptured = false;
-				}
-
-				Vector2 spawnPosition = Vector2.Zero;
-				bool isValidPosition = false;
-				int attempts = 0;
-
-				while (!isValidPosition && attempts < 100)
-				{
-					attempts++;
-					float angle = (float)(rand.NextDouble() * Mathf.Tau);
-					float distance = (float)(rand.NextDouble()) * (_spawnRadiusMax - _spawnRadiusMin) + _spawnRadiusMin;
-					spawnPosition = new Vector2(Mathf.Cos(angle) * distance, Mathf.Sin(angle) * distance);
-
-					isValidPosition = true;
-					foreach (Vector2 existingPos in spawnedPositions)
+					if (spawnPosition.DistanceTo(existingPos) < minDistanceBetweenPlanets)
 					{
-						if (spawnPosition.DistanceTo(existingPos) < minDistanceBetweenPlanets)
-						{
-							isValidPosition = false;
-							break;
-						}
+						isValidPosition = false;
+						break;
 					}
 				}
+			}
 
-				spawnedPositions.Add(spawnPosition);
+			spawnedPositions.Add(spawnPosition);
 
-				// РАЗНООБРАЗИЕ ПАРАМЕТРОВ:
-				planetInstance.PlanetName = $"Sector-Star-PX-{i}";
-				planetInstance.PlanetClass = planetClasses[rand.Next(planetClasses.Length)];
-				
-				// Радиус от 0.5 до 3.5, масса зависит от радиуса + небольшой случайный множитель
-				planetInstance.PlanetRadius = 0.5f + (float)rand.NextDouble() * 3.0f;
-				planetInstance.PlanetMass = planetInstance.PlanetRadius * (0.8f + (float)rand.NextDouble() * 0.4f);
+			// РАЗНООБРАЗИЕ ПАРАМЕТРОВ:
+			planetInstance.PlanetName = $"Sector-Star-PX-{i}";
+			planetInstance.PlanetClass = planetClasses[rand.Next(planetClasses.Length)];
+			planetInstance.PlanetRadius = 0.5f + (float)rand.NextDouble() * 3.0f;
+			planetInstance.PlanetMass = planetInstance.PlanetRadius * (0.8f + (float)rand.NextDouble() * 0.4f);
 
-				planetInstance.GlobalPosition = spawnPosition;
-				planetInstance.ZIndex = -10;
-				planetInstance.AddToGroup("planets");
+			planetInstance.GlobalPosition = spawnPosition;
+			planetInstance.ZIndex = -10;
+			planetInstance.AddToGroup("planets");
 
-				_parentWorld.AddChild(planetInstance);
+			// ВАЖНО: красим атмосферу ДО AddChild, чтобы Planet._Ready() запомнил правильный цвет
+			var atmosphere = planetInstance.GetNodeOrNull<Line2D>("%AtmosphereLine");
+			if (atmosphere != null)
+			{
+				atmosphere.DefaultColor = neonColors[rand.Next(neonColors.Length)];
+			}
 
-				// СРАЗУ КРАСИМ АТМОСФЕРУ: Находим Line2D на свежесозданной планете и красим в случайный цвет
-				var atmosphere = planetInstance.GetNodeOrNull<Line2D>("Line2D") ?? planetInstance.GetNodeOrNull<Line2D>("%Line2D");
-				if (atmosphere != null)
-				{
-					atmosphere.DefaultColor = neonColors[rand.Next(neonColors.Length)];
-				}
+			_parentWorld.AddChild(planetInstance);
 
-				GD.Print($"Planet {planetInstance.PlanetName} spawned smoothly.");
+			GD.Print($"Planet {planetInstance.PlanetName} spawned smoothly.");;
 			}
 			GD.Print("--- PROCEDURAL GENERATION COMPLETED ---");
 		}

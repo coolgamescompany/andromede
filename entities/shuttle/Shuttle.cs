@@ -97,13 +97,16 @@ namespace SpaceGame.Entities.Shuttle
 			if (TargetPlanetObj.isCaptured)
 			{
 				GD.Print($"Цель {TargetPlanetName} захвачена. Автопилот ищет следующую планету сектора...");
-				
+
+				// Отстыковываемся от старой планеты, чтобы она сбросила флаг _isPlayerLanded
+				TargetPlanetObj.ReleaseLanding();
+
 				// Сбрасываем старые параметры, но НЕ выключаем IsAutopilotActive!
 				TargetPlanetObj = null;
 				TargetPlanetName = "NONE";
 				_currentAutopilotSpeed = 0f;
 				AutopilotTimer = 0.0f;
-				
+
 				// Мгновенно запускаем поиск новой незахваченной планеты
 				FindNearestUncapturedPlanet();
 				return;
@@ -257,13 +260,20 @@ namespace SpaceGame.Entities.Shuttle
 		public void CancelAutopilot()
 		{
 			IsAutopilotActive = false;
+
+			// Если мы были пристыкованы — отпускаем планету
+			if (TargetPlanetObj != null)
+			{
+				TargetPlanetObj.ReleaseLanding();
+			}
+
 			TargetPlanetObj = null;
 			TargetPlanetName = "NONE";
 			AutopilotExeState = "OFF";
-			
+
 			// Принудительно возвращаем зум к 100% масштабу, 
 			// но теперь один раз при отключении, а не каждый кадр!
-			_targetZoom = 1.0f; 
+			_targetZoom = 1.0f;
 			GD.Print("Автопилот отключен. Ручное управление восстановлено.");
 		}
 

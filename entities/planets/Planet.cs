@@ -12,7 +12,7 @@ namespace SpaceGame.Entities.Planet
 
 		[Export] public bool isCaptured { get; set; } = false;
 		[Export] public float CaptureProgress { get; private set; } = 0.0f; 
-		[Export] public float CaptureSpeed { get; private set; } = 10.0f; 
+		[Export] public float CaptureSpeed { get; private set; } = 15.0f; 
 
 		private bool _isPlayerLanded = false;
 		private RigidBody2D _shuttleBody = null;
@@ -53,16 +53,12 @@ namespace SpaceGame.Entities.Planet
 					_atmosphereLine.DefaultColor = _initialPlanetColor.Lerp(Colors.Green, progressFactor);
 				}
 
-
 				if (CaptureProgress >= 100f)
 				{
 					CaptureProgress = 100f;
 					isCaptured = true;
 					OnPlanetCaptured();
 				}
-				
-				// Сбрасываем флаг. Если шаттл взлетит на ЛКМ — контакт разорвется
-				_isPlayerLanded = false;
 			}
 		}
 
@@ -91,7 +87,7 @@ namespace SpaceGame.Entities.Planet
 		{
 			GD.Print($"Планета {PlanetName} полностью захвачена игроком!");
 			
-			var atmosphere = GetNode<Line2D>("%AtmosphereLine");
+			var atmosphere = GetNodeOrNull<Line2D>("%AtmosphereLine");
 			if (atmosphere != null)
 			{
 				atmosphere.DefaultColor = Colors.Green;
@@ -113,6 +109,13 @@ namespace SpaceGame.Entities.Planet
 		{
 			_shuttleBody = shuttle;
 			_isPlayerLanded = true;
+		}
+
+		// Вызывается, когда шаттл покидает планету (например, автопилот переключился на другую цель)
+		public void ReleaseLanding()
+		{
+			_isPlayerLanded = false;
+			_shuttleBody = null;
 		}
 	}
 }
