@@ -31,6 +31,7 @@ namespace SpaceGame.Entities.Planet
 		public override void _Ready()
 		{
 			base._Ready();
+
 			_gravityArea = GetNode<Area2D>("%GravityArea");
 			_gravityArea.BodyEntered += OnShuttleEnteredOrbit;
 			_gravityArea.BodyExited += OnShuttleExitedOrbit;
@@ -39,6 +40,28 @@ namespace SpaceGame.Entities.Planet
 			if (_atmosphereLine != null)
 			{
 				_initialPlanetColor = _atmosphereLine.DefaultColor;
+				// Вызывает сеттер в circle.gd, строит визуал
+				_atmosphereLine.Set("radius", PlanetRadius);
+			}
+
+			// ИСПРАВЛЕНИЕ: Делаем физическую коллизию УНИКАЛЬНОЙ для этой планеты
+			var physicalCollision = GetNode<CollisionShape2D>("PhysicalCollision");
+			if (physicalCollision != null && physicalCollision.Shape is CircleShape2D physicalCircle)
+			{
+				// Дублируем ресурс, чтобы изменение радиуса не ломало другие планеты!
+				CircleShape2D uniqueShape = (CircleShape2D)physicalCircle.Duplicate();
+				uniqueShape.Radius = PlanetRadius * 1.007f;
+				physicalCollision.Shape = uniqueShape;
+			}
+
+			// ИСПРАВЛЕНИЕ: Делаем зону гравитации УНИКАЛЬНОЙ для этой планеты
+			var gravityCollision = _gravityArea.GetNode<CollisionShape2D>("CollisionShape2D");
+			if (gravityCollision != null && gravityCollision.Shape is CircleShape2D gravityCircle)
+			{
+				// Дублируем ресурс гравитационного поля
+				CircleShape2D uniqueGravityShape = (CircleShape2D)gravityCircle.Duplicate();
+				uniqueGravityShape.Radius = PlanetRadius * 2.6f;
+				gravityCollision.Shape = uniqueGravityShape;
 			}
 		}
 
@@ -119,11 +142,15 @@ namespace SpaceGame.Entities.Planet
 		{
 			GD.Print($"Планета {PlanetName} полностью захвачена {(CapturedByWhom == CapturedBy.Enemy ? "врагом" : "игроком")}!");
 
-			var collisionPlanet = GetNode<CollisionShape2D>("PhysicalCollision");
-			if (collisionPlanet != null)
-			{
-				collisionPlanet.Disabled = true;
-			}
+			//var collisionPlanet = GetNode<CollisionShape2D>("PhysicalCollision");
+			//if (collisionPlanet != null)
+			//{
+			//	collisionPlanet.Disabled = true;
+			//}
+			// Вместо Disabled = true мы просто убираем планету из физического слоя столкновений (Layer 1).
+			// Теперь сквозь нее можно пролетать, и RigidBody2D шаттла больше никогда в ней не застрянет!
+			CollisionLayer = 0; 
+			CollisionMask = 0;
 		}
 
 
@@ -138,14 +165,24 @@ namespace SpaceGame.Entities.Planet
 			_shuttleBody = shuttle;
 			_isPlayerLanded = true;
 			_isEnemyLanding = isEnemy;
+
+			// ОТКЛЮЧАЕМ столкновение шаттла с планетой на время посадки (выключаем маску коллизии)
+			// Шаттл плавно встанет на нужную дистанцию без физического выталкивания
+			shuttle.CollisionMask |= 1; 
+
 			return true;
 		}
 
-		// Вызывается, когда шаттл покидает планету (например, автопилот переключился на другую цель)
 		public void ReleaseLanding()
 		{
+			if (_shuttleBody != null)
+			{
+				// ВОЗВРАЩАЕМ коллизию шаттлу обратно при взлете
+				_shuttleBody.CollisionMask |= 1;
+			}
 			_isPlayerLanded = false;
 			_shuttleBody = null;
 		}
+
 	}
 }

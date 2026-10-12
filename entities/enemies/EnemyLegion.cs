@@ -67,14 +67,17 @@ namespace SpaceGame.Entities.Enemy
 				FindNearestUncapturedPlanet();
 			}
 
-			_leader.SetTarget(_targetPosition);
+			// Лидеру передаем целевую планету для правильного расчета радиуса посадки
+			_leader.SetTarget(_targetPosition, _targetPlanet);
 
+			// Ведомым передаем null, они просто удерживают позицию в строю вокруг лидера
 			for (int i = 1; i < _shuttles.Count; i++)
 			{
 				Vector2 formationPos = _leader.GlobalPosition + _formationOffsets[i];
-				_shuttles[i].SetTarget(formationPos);
+				_shuttles[i].SetTarget(formationPos, null);
 			}
 		}
+
 
 
 		// ON LEADER ARRIVED

@@ -10,7 +10,7 @@ namespace SpaceGame.Entities.Shuttle
 		private Camera2D _shuttleCamera;
 		private float _targetZoom = 1.0f;
 		private float _zoomSpeed = 0.1f;
-		private float _minZoom = 0.3f;
+		private float _minZoom = 0.05f;
 		private float _maxZoom = 2.0f;
 
 		private float _maxVelocity = 5000f;
@@ -31,7 +31,7 @@ namespace SpaceGame.Entities.Shuttle
 		public float AutopilotTimer { get; private set; } = 0.0f;
 
 		public SpaceGame.Entities.Planet.Planet TargetPlanetObj { get; private set; } = null;
-		private float _landingThreshold = 1050f;
+		// private float _landingThreshold = 1050f;
 		private float _currentAutopilotSpeed = 0f; // Для плавного разгона автопилота
 
 		[Signal] public delegate void CameraReadyEventHandler(Camera2D camera);
@@ -94,23 +94,26 @@ namespace SpaceGame.Entities.Shuttle
 			AutopilotTimer += fDelta;
 
 			// АРХИТЕКТУРНЫЙ АПДЕЙТ: Если текущая планета УСПЕШНО ЗАХВАЧЕНА
+			// АРХИТЕКТУРНЫЙ АПДЕЙТ: Если текущая планета УСПЕШНО ЗАХВАЧЕНА
 			if (TargetPlanetObj.isCaptured)
 			{
 				GD.Print($"Цель {TargetPlanetName} захвачена. Автопилот ищет следующую планету сектора...");
 
-				// Отстыковываемся от старой планеты, чтобы она сбросила флаг _isPlayerLanded
+				// Просто отпускаем планету. Никаких телепортов не нужно, физика планеты уже отключена в Layer!
 				TargetPlanetObj.ReleaseLanding();
 
-				// Сбрасываем старые параметры, но НЕ выключаем IsAutopilotActive!
+				// Сбрасываем старые параметры, но сохраняем текущий импульс скорости для плавности
 				TargetPlanetObj = null;
 				TargetPlanetName = "NONE";
-				_currentAutopilotSpeed = 0f;
+				_currentAutopilotSpeed = LinearVelocity.Length(); 
 				AutopilotTimer = 0.0f;
 
 				// Мгновенно запускаем поиск новой незахваченной планеты
 				FindNearestUncapturedPlanet();
 				return;
 			}
+
+
 
 			Vector2 toPlanet = TargetPlanetObj.GlobalPosition - GlobalPosition;
 			float distance = toPlanet.Length();
@@ -125,7 +128,13 @@ namespace SpaceGame.Entities.Shuttle
 			}
 
 			// Стадия 2: ПОЛЕТ К ЦЕЛИ
-			if (distance > _landingThreshold)
+			// Вычисляем динамический порог посадки: текущий радиус планеты + 50 пикселей отступа
+			// Корабль подлетит практически вплотную к визуальной черной окружности
+			float dynamicLandingThreshold = TargetPlanetObj.PlanetRadius + 60f;
+
+
+			// Стадия 2: ПОЛЕТ К ЦЕЛИ
+			if (distance > dynamicLandingThreshold)
 			{
 				AutopilotExeState = "APPROACHING";
 				_targetZoom = _minZoom;
@@ -134,21 +143,31 @@ namespace SpaceGame.Entities.Shuttle
 				Vector2 desiredDirection = toPlanet.Normalized();
 
 				// --- СИСТЕМА НАВИГАЦИОННОГО ОБХОДА ПРЕГРАД (ОБЛЕТ ПО ДУГЕ) ---
+				// --- ОБНОВЛЕННАЯ СИСТЕМА НАВИГАЦИОННОГО ОБХОДА ВСЕХ ПРЕГРАД ---
 				var allPlanets = GetTree().GetNodesInGroup("planets");
 				Planet.Planet obstaclePlanet = null;
 				float closestObstacleDist = float.MaxValue;
 
 				foreach (Node node in allPlanets)
 				{
-					if (node is Planet.Planet planet && planet != TargetPlanetObj)
+					if (node is Planet.Planet planet)
 					{
-						// Считаем вектор от корабля до этой чужой планеты
+						// Игнорируем только ту планету, к которой мы ЛЕТИМ прямо сейчас
+						if (planet == TargetPlanetObj) continue;
+
+						// Считаем расстояние до этой планеты
 						Vector2 toObstacle = planet.GlobalPosition - GlobalPosition;
 						float distToObstacle = toObstacle.Length();
 
-						// Если планета находится близко и ПРЯМО НА НАШЕМ ПУТИ
-						// Проверяем это через скалярное произведение (Dot Product) векторов
-						if (distToObstacle < 4000f && desiredDirection.Dot(toObstacle.Normalized()) > 0.8f)
+						// ФИКС ВЗЛЕТА: Если мы все еще очень близко к планете, с которой только что взлетели,
+						// игнорируем её, чтобы система обхода не пыталась кружить на месте
+						if (distToObstacle < planet.PlanetRadius + 200f) continue;
+
+						// Проверяем, лежит ли планета прямо на нашем курсе (через скалярное произведение)
+						// Увеличиваем радиус обнаружения угрозы в зависимости от размера самой планеты-преграды!
+						float dangerZoneRadius = planet.PlanetRadius + 1500f; 
+
+						if (distToObstacle < dangerZoneRadius && desiredDirection.Dot(toObstacle.Normalized()) > 0.75f)
 						{
 							if (distToObstacle < closestObstacleDist)
 							{
@@ -159,7 +178,7 @@ namespace SpaceGame.Entities.Shuttle
 					}
 				}
 
-				// Если впереди обнаружена преграда — корректируем курс по дуге!
+				// Если впереди обнаружена любая преграда — уходим на безопасную дугу маневра
 				if (obstaclePlanet != null)
 				{
 					Vector2 toObstacleVec = obstaclePlanet.GlobalPosition - GlobalPosition;
@@ -170,17 +189,18 @@ namespace SpaceGame.Entities.Shuttle
 						avoidanceDirection = -avoidanceDirection;
 					}
 
-					float avoidanceWeight = Mathf.Clamp(1.0f - (closestObstacleDist / 4000f), 0.2f, 0.9f);
+					// Рассчитываем силу уклонения: чем ближе к планете-преграде, тем агрессивнее маневр
+					float safetyMargin = obstaclePlanet.PlanetRadius + 800f;
+					float avoidanceWeight = Mathf.Clamp(1.0f - (closestObstacleDist / safetyMargin), 0.3f, 0.95f);
 					desiredDirection = desiredDirection.Lerp(avoidanceDirection, avoidanceWeight).Normalized();
 					
-					AutopilotExeState = "CHASING"; // Включаем статус маневра
+					AutopilotExeState = "EVADING"; // Меняем статус на HUD для наглядности дебага
 
-					// --- ФИЗИЧЕСКИЙ ФИКС: БОКОВЫЕ МАНЕВРОВЫЕ ДВИГАТЕЛИ ---
-					// Чем ближе корабль к чужой планете, тем мощнее боковые двигатели 
-					// будут ОТТАЛКИВАТЬ шаттл вбок (по вектору avoidanceDirection) подальше от коллизии!
-					float lateralThrustPower = 1800f * (1.0f - (closestObstacleDist / 4000f));
+					// Мощный импульс боковых двигателей для компенсации инерции тяжелого RigidBody
+					float lateralThrustPower = 2500f * (1.0f - (closestObstacleDist / safetyMargin));
 					ApplyCentralForce(avoidanceDirection * lateralThrustPower);
 				}
+
 
 
 				// ПРИМЕНЯЕМ ПОЛУЧЕННЫЙ ВЕКТОР ТРАЕКТОРИИ
@@ -200,7 +220,7 @@ namespace SpaceGame.Entities.Shuttle
 			{
 				// Стадия 3: МЯГКАЯ ПОСАДКА И СТЫКОВКА
 				AutopilotExeState = "LANDED";
-				_targetZoom = _maxZoom; // Максимальное приближение камеры при посадке!
+				_targetZoom = _maxZoom; 
 
 				LinearVelocity = Vector2.Zero;
 				AngularVelocity = 0f;

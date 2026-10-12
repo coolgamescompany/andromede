@@ -11,7 +11,7 @@ namespace SpaceGame.Entities.Enemy
 		private float _maxVelocity = 500f;
 		private float _acceleration = 800f;
 		private float _currentSpeed = 0f;
-		private float _arrivalThreshold = 1050f;
+		// private float _arrivalThreshold = 1050f;
 		private bool _hasArrived = false;
 
 		// READY
@@ -23,14 +23,21 @@ namespace SpaceGame.Entities.Enemy
 		}
 
 		// SET TARGET
-		public void SetTarget(Vector2 pos)
+		// Новое свойство для хранения ссылки на целевую планету
+		public SpaceGame.Entities.Planet.Planet TargetPlanetObj { get; private set; } = null;
+
+		// Обновленный метод установки цели, принимающий планету
+		public void SetTarget(Vector2 pos, SpaceGame.Entities.Planet.Planet targetPlanet = null)
 		{
+			TargetPlanetObj = targetPlanet;
+			
 			if (_targetPosition.DistanceTo(pos) > 10f)
 			{
 				_targetPosition = pos;
 				_hasArrived = false;
 			}
 		}
+
 
 		// PHYSICS PROCESS
 		public override void _PhysicsProcess(double delta)
@@ -43,8 +50,15 @@ namespace SpaceGame.Entities.Enemy
 			// 2 расстояние
 			float distance = toTarget.Length();
 
+			// Определяем порог прибытия: если летим к планете, берем её радиус + отступ. 
+			// Если летим просто в точку (в строю за лидером), оставляем небольшой порог, например 150 пикселей.
+			// Для врагов ставим порог: радиус планеты + 150 пикселей на габариты корпуса
+			float currentThreshold = (TargetPlanetObj != null) ? (TargetPlanetObj.PlanetRadius + 60f) : 150f;
+
+
+
 			// 3 если близко - стоп
-			if (distance < _arrivalThreshold)
+			if (distance < currentThreshold)
 			{
 				LinearVelocity = Vector2.Zero;
 				_currentSpeed = 0;

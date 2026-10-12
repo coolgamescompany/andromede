@@ -88,8 +88,18 @@ namespace SpaceGame.Core
 			// РАЗНООБРАЗИЕ ПАРАМЕТРОВ:
 			planetInstance.PlanetName = $"Sector-Star-PX-{i}";
 			planetInstance.PlanetClass = planetClasses[rand.Next(planetClasses.Length)];
-			planetInstance.PlanetRadius = 0.5f + (float)rand.NextDouble() * 3.0f;
-			planetInstance.PlanetMass = planetInstance.PlanetRadius * (0.8f + (float)rand.NextDouble() * 0.4f);
+
+			// Генерируем реальный радиус в пикселях
+			// rand.NextDouble() в кубе смещает вероятность к мелким планетам
+			float t = (float)rand.NextDouble();
+			float randomRadius = 350f + (float)Math.Pow(t, 2) * 2150f; // Диапазон от 350px до 2500px
+
+			planetInstance.PlanetRadius = randomRadius;
+
+			// Масса честно зависит от объема/площади планеты (радиус в квадрате)
+			planetInstance.PlanetMass = (randomRadius * randomRadius / 10000f) * (0.8f + (float)rand.NextDouble() * 0.4f);
+
+
 
 			planetInstance.GlobalPosition = spawnPosition;
 			planetInstance.ZIndex = -10;
