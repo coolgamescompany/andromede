@@ -14,11 +14,12 @@ unique_name_in_owner = true
 
 [node name="Line2D" type="Line2D" parent="." unique_id=1796113823]
 position = Vector2(-26, -16)
-points = PackedVector2Array(51, 45, 26, -3, 1, 45, 26, 29)
+points = PackedVector2Array(51, 45, 33, 18, 26, -3, 19, 17, 1, 45, 18, 32, 26, 35, 32, 32)
 closed = true
 width = 2.0
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=290805438]
+visible = false
 position = Vector2(0, 3)
 polygon = PackedVector2Array(0, -21, -24, 25, 0, 10, 24, 25)
 

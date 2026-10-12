@@ -13,6 +13,7 @@ namespace SpaceGame.Core
 		public static World Instance { get; private set; }
 		private Line2D _routeLine;
 		[Export] public PackedScene PlanetTemplate { get; set; }
+		[Export] public PackedScene EnemyTemplate { get; set; }
 
 		public override void _Ready()
 		{

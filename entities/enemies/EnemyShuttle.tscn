@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://ckwdup7sc1oxa"]
+
+[ext_resource type="Script" uid="uid://de2y2n6dauqxm" path="res://entities/enemies/EnemyShuttle.cs" id="1_htnmf"]
+
+[node name="RigidBody2D" type="RigidBody2D" unique_id=475854932]
+script = ExtResource("1_htnmf")
+
+[node name="Line2D" type="Line2D" parent="." unique_id=1063004922]
+unique_name_in_owner = true
+position = Vector2(26, 19)
+rotation = 3.1415927
+points = PackedVector2Array(43, 26.999996, 43, 12.999996, 36, 21.999996, 28, 7, 26, 1.9999981, 24, 7, 16, 22, 9, 13, 9, 28, 26, 40)
+closed = true
+width = 2.0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=323533618]
+unique_name_in_owner = true
+polygon = PackedVector2Array(-10, -4, -2, 12, 0, 15, 2, 12, 10, -4, 17, 5, 17, -9, 0, -21, -17, -8, -17, 5)
+
+[node name="TrailLine" type="Line2D" parent="." unique_id=1886625581]
+unique_name_in_owner = true

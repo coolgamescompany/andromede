@@ -3,6 +3,7 @@
 [ext_resource type="Shader" uid="uid://j1n74oud3ox3" path="res://assets/shaders/space_grid.gdshader" id="1_nnsk1"]
 [ext_resource type="Script" uid="uid://cbdrv0ogb0orj" path="res://src/Core/World.cs" id="1_rwgxs"]
 [ext_resource type="PackedScene" uid="uid://dnko4xmlj3o4f" path="res://entities/shuttle/shuttle.tscn" id="3_4wyf3"]
+[ext_resource type="PackedScene" uid="uid://ckwdup7sc1oxa" path="res://entities/enemies/EnemyShuttle.tscn" id="3_qfnet"]
 [ext_resource type="PackedScene" uid="uid://dp3os4rpa5pew" path="res://ui/hud/hud.tscn" id="4_k0juu"]
 [ext_resource type="PackedScene" uid="uid://d2jwqdve70ix2" path="res://entities/planets/planet.tscn" id="5_71j4m"]
 
@@ -17,6 +18,7 @@ shader_parameter/line_thickness = 1.0
 [node name="World" type="Node2D" unique_id=1615865964]
 script = ExtResource("1_rwgxs")
 PlanetTemplate = ExtResource("5_71j4m")
+EnemyTemplate = ExtResource("3_qfnet")
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=1270560565]
 layer = -1
