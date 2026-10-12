@@ -4,12 +4,15 @@ namespace SpaceGame.Entities.Enemy
 {
 	public partial class EnemyShuttle : RigidBody2D
 	{
+		[Signal] public delegate void ArrivedAtTargetEventHandler();
 		// ПЕРЕМЕННЫЕ
 		private Vector2 _targetPosition;
+
 		private float _maxVelocity = 5000f;
 		private float _acceleration = 800f;
 		private float _currentSpeed = 0f;
 		private float _arrivalThreshold = 1050f;
+		private bool _hasArrived = false;
 
 		// READY
 		public override void _Ready()
@@ -22,7 +25,11 @@ namespace SpaceGame.Entities.Enemy
 		// SET TARGET
 		public void SetTarget(Vector2 pos)
 		{
-			_targetPosition = pos;
+			if (_targetPosition.DistanceTo(pos) > 10f)
+			{
+				_targetPosition = pos;
+				_hasArrived = false;
+			}
 		}
 
 		// PHYSICS PROCESS
@@ -41,6 +48,13 @@ namespace SpaceGame.Entities.Enemy
 			{
 				LinearVelocity = Vector2.Zero;
 				_currentSpeed = 0;
+
+				if (!_hasArrived)
+				{
+					_hasArrived = true;
+					EmitSignal(SignalName.ArrivedAtTarget);
+				}
+
 				return;
 			}
 
