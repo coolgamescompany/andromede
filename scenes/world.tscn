@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://cbdrv0ogb0orj" path="res://src/Core/World.cs" id="1_rwgxs"]
 [ext_resource type="PackedScene" uid="uid://dnko4xmlj3o4f" path="res://entities/shuttle/shuttle.tscn" id="3_4wyf3"]
 [ext_resource type="PackedScene" uid="uid://ckwdup7sc1oxa" path="res://entities/enemies/EnemyShuttle.tscn" id="3_qfnet"]
+[ext_resource type="PackedScene" uid="uid://xl7hmfdiiav6" path="res://entities/enemies/EnemyLegion.tscn" id="4_i7141"]
 [ext_resource type="PackedScene" uid="uid://dp3os4rpa5pew" path="res://ui/hud/hud.tscn" id="4_k0juu"]
 [ext_resource type="PackedScene" uid="uid://d2jwqdve70ix2" path="res://entities/planets/planet.tscn" id="5_71j4m"]
 
@@ -19,6 +20,7 @@ shader_parameter/line_thickness = 1.0
 script = ExtResource("1_rwgxs")
 PlanetTemplate = ExtResource("5_71j4m")
 EnemyTemplate = ExtResource("3_qfnet")
+EnemyLegionTemplate = ExtResource("4_i7141")
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=1270560565]
 layer = -1

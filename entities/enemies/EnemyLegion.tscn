@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://xl7hmfdiiav6"]
+
+[ext_resource type="Script" uid="uid://bmc5768b2rxyw" path="res://entities/enemies/EnemyLegion.cs" id="1_3n278"]
+[ext_resource type="PackedScene" uid="uid://ckwdup7sc1oxa" path="res://entities/enemies/EnemyShuttle.tscn" id="2_1peyf"]
+
+[node name="EnemyLegion" type="Node2D" unique_id=1817330552]
+script = ExtResource("1_3n278")
+EnemyShuttleTemplate = ExtResource("2_1peyf")

@@ -12,8 +12,11 @@ namespace SpaceGame.Core
 		private SpaceGame.Entities.Shuttle.Shuttle _shuttle; // Сохраняем ссылку на шаттл
 		public static World Instance { get; private set; }
 		private Line2D _routeLine;
+
+		// ЭКСПОРТ ШАБЛОНОВ
 		[Export] public PackedScene PlanetTemplate { get; set; }
 		[Export] public PackedScene EnemyTemplate { get; set; }
+		[Export] public PackedScene EnemyLegionTemplate { get; set; }
 
 		public override void _Ready()
 		{
@@ -42,6 +45,11 @@ namespace SpaceGame.Core
 			// Передаем текущий мир (this) и шаблон из инспектора (PlanetTemplate)
 			var generator = new SystemGenerator(this, PlanetTemplate);
 			generator.GenerateSystemPlanets();
+
+			// ЗАПУСК ЛЕГИОНА
+			var legion = EnemyLegionTemplate.Instantiate<SpaceGame.Entities.Enemy.EnemyLegion>();
+			legion.GlobalPosition = new Vector2(2000, 2000);
+			AddChild(legion);
 
 		}
 

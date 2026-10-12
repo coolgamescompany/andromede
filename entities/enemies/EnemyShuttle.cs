@@ -8,7 +8,7 @@ namespace SpaceGame.Entities.Enemy
 		// ПЕРЕМЕННЫЕ
 		private Vector2 _targetPosition;
 
-		private float _maxVelocity = 5000f;
+		private float _maxVelocity = 500f;
 		private float _acceleration = 800f;
 		private float _currentSpeed = 0f;
 		private float _arrivalThreshold = 1050f;
