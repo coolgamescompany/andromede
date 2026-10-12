@@ -48,21 +48,46 @@ namespace SpaceGame.Entities.Planet
 			// Если автопилот усадил корабль на нашу поверхность
 			if (_isPlayerLanded && _shuttleBody != null && !isCaptured)
 			{
-				CaptureProgress += CaptureSpeed * (float)delta;
-				GD.Print($"Шаттл пристыкован. Идет захват {PlanetName}: {Mathf.Round(CaptureProgress)}%");
+				// 1. Определяем, кто сейчас на планете
+				CapturedBy incoming = _isEnemyLanding ? CapturedBy.Enemy : CapturedBy.Player;
 
+				// 2. Если на планете ещё никто не хозяйничал — этот и есть хозяин
+				if (CapturedByWhom == CapturedBy.None)
+				{
+					CapturedByWhom = incoming;
+				}
+
+				// 3. Если это тот же хозяин — прогресс растёт
+				if (CapturedByWhom == incoming)
+				{
+					CaptureProgress += CaptureSpeed * (float)delta;
+				}
+				else
+				{
+					// 4. Если чужой — стираем прогресс предыдущего хозяина
+					CaptureProgress -= CaptureSpeed * (float)delta;
+
+					// 5. Если дошли до нуля — планета нейтральна, хозяин меняется
+					if (CaptureProgress <= 0f)
+					{
+						CaptureProgress = 0f;
+						CapturedByWhom = incoming;
+					}
+				}
+
+				// 6. Цвет — от хозяина прогресса
 				if (_atmosphereLine != null)
 				{
 					float progressFactor = CaptureProgress / 100f;
-					Color targetColor = _isEnemyLanding ? Colors.Red : Colors.Green;
+					Color targetColor = (CapturedByWhom == CapturedBy.Enemy) ? Colors.Red : Colors.Green;
 					_atmosphereLine.DefaultColor = _initialPlanetColor.Lerp(targetColor, progressFactor);
 				}
 
+				// 7. Захват завершён
 				if (CaptureProgress >= 100f)
 				{
 					CaptureProgress = 100f;
 					isCaptured = true;
-					CapturedByWhom = _isEnemyLanding ? CapturedBy.Enemy : CapturedBy.Player;
 					OnPlanetCaptured();
 				}
 			}
@@ -102,18 +127,17 @@ namespace SpaceGame.Entities.Planet
 
 
 		// Этот метод автоматически вызывает сам Шаттл при физическом касании
-		public void RegisterLanding(RigidBody2D shuttle, bool isEnemy)
+		public bool RegisterLanding(RigidBody2D shuttle, bool isEnemy)
 		{
-			// Если кто-то уже сидит на планете — отказываем
 			if (_isPlayerLanded && _shuttleBody != null && _shuttleBody != shuttle)
 			{
-				GD.Print($"Планета {PlanetName} уже занята другим шаттлом. Посадка отклонена.");
-				return;
+				return false;
 			}
 
 			_shuttleBody = shuttle;
 			_isPlayerLanded = true;
 			_isEnemyLanding = isEnemy;
+			return true;
 		}
 
 		// Вызывается, когда шаттл покидает планету (например, автопилот переключился на другую цель)

@@ -210,7 +210,16 @@ namespace SpaceGame.Entities.Shuttle
 				Rotation = faceToSpace.Angle() + Mathf.Pi / 2f;
 
 				// Передаем планете сигнал, что мы сидим на ней
-				TargetPlanetObj.RegisterLanding(this, isEnemy: false);
+				bool landed = TargetPlanetObj.RegisterLanding(this, isEnemy: false);
+
+				if (!landed)
+				{
+					GD.Print($"Планета {TargetPlanetObj.PlanetName} занята врагом. Ищу другую.");
+					TargetPlanetObj = null;
+					TargetPlanetName = "NONE";
+					AutopilotTimer = 0.0f;
+					FindNearestUncapturedPlanet();
+				}
 			}
 		}
 
