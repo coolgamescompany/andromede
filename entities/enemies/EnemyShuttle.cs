@@ -72,8 +72,12 @@ namespace SpaceGame.Entities.Enemy
 
 			// 8 
 			Rotation = direction.Angle() + Mathf.Pi / 2f;
+		}
 
-
+		// TRY LAND ON PLANET
+		public void TryLandOnPlanet(SpaceGame.Entities.Planet.Planet planet)
+		{
+			planet.RegisterLanding(this, isEnemy: true);
 		}
 
 

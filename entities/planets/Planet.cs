@@ -14,6 +14,10 @@ namespace SpaceGame.Entities.Planet
 		[Export] public float CaptureProgress { get; private set; } = 0.0f; 
 		[Export] public float CaptureSpeed { get; private set; } = 15.0f; 
 
+		public enum CapturedBy { None, Player, Enemy }
+		public CapturedBy CapturedByWhom { get; private set; } = CapturedBy.None;
+		private bool _isEnemyLanding = false;
+
 		private bool _isPlayerLanded = false;
 		private RigidBody2D _shuttleBody = null;
 
@@ -50,13 +54,15 @@ namespace SpaceGame.Entities.Planet
 				if (_atmosphereLine != null)
 				{
 					float progressFactor = CaptureProgress / 100f;
-					_atmosphereLine.DefaultColor = _initialPlanetColor.Lerp(Colors.Green, progressFactor);
+					Color targetColor = _isEnemyLanding ? Colors.Red : Colors.Green;
+					_atmosphereLine.DefaultColor = _initialPlanetColor.Lerp(targetColor, progressFactor);
 				}
 
 				if (CaptureProgress >= 100f)
 				{
 					CaptureProgress = 100f;
 					isCaptured = true;
+					CapturedByWhom = _isEnemyLanding ? CapturedBy.Enemy : CapturedBy.Player;
 					OnPlanetCaptured();
 				}
 			}
@@ -85,30 +91,29 @@ namespace SpaceGame.Entities.Planet
 
 		public void OnPlanetCaptured()
 		{
-			GD.Print($"Планета {PlanetName} полностью захвачена игроком!");
-			
-			var atmosphere = GetNodeOrNull<Line2D>("%AtmosphereLine");
-			if (atmosphere != null)
-			{
-				atmosphere.DefaultColor = Colors.Green;
-			}
+			GD.Print($"Планета {PlanetName} полностью захвачена {(CapturedByWhom == CapturedBy.Enemy ? "врагом" : "игроком")}!");
 
-			// ХИТРЫЙ ГЕЙМДИЗАЙНЕРСКИЙ ФИКС (Твой вариант, доведённый до ума!):
-			// Находим узел коллизии по его реальному имени на сцене
 			var collisionPlanet = GetNode<CollisionShape2D>("PhysicalCollision");
 			if (collisionPlanet != null)
 			{
-				// Выключаем физическую форму, делая планету «призраком» для шаттла!
 				collisionPlanet.Disabled = true;
 			}
 		}
 
 
 		// Этот метод автоматически вызывает сам Шаттл при физическом касании
-		public void RegisterPlayerLanding(RigidBody2D shuttle)
+		public void RegisterLanding(RigidBody2D shuttle, bool isEnemy)
 		{
+			// Если кто-то уже сидит на планете — отказываем
+			if (_isPlayerLanded && _shuttleBody != null && _shuttleBody != shuttle)
+			{
+				GD.Print($"Планета {PlanetName} уже занята другим шаттлом. Посадка отклонена.");
+				return;
+			}
+
 			_shuttleBody = shuttle;
 			_isPlayerLanded = true;
+			_isEnemyLanding = isEnemy;
 		}
 
 		// Вызывается, когда шаттл покидает планету (например, автопилот переключился на другую цель)

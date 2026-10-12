@@ -81,6 +81,7 @@ namespace SpaceGame.Entities.Enemy
 		private void OnLeaderArrived()
 		{
 			GD.Print($"Лидер {_leader.Name} долетел!");
+			_leader.TryLandOnPlanet(_targetPlanet);
 		}
 
 		// FIND NEAREST UNCAPTURED PLANET

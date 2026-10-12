@@ -125,8 +125,6 @@ namespace SpaceGame.Entities.Shuttle
 			}
 
 			// Стадия 2: ПОЛЕТ К ЦЕЛИ
-
-			// Стадия 2: ПОЛЕТ К ЦЕЛИ
 			if (distance > _landingThreshold)
 			{
 				AutopilotExeState = "APPROACHING";
@@ -212,7 +210,7 @@ namespace SpaceGame.Entities.Shuttle
 				Rotation = faceToSpace.Angle() + Mathf.Pi / 2f;
 
 				// Передаем планете сигнал, что мы сидим на ней
-				TargetPlanetObj.RegisterPlayerLanding(this);
+				TargetPlanetObj.RegisterLanding(this, isEnemy: false);
 			}
 		}
 
