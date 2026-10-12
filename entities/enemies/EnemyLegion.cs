@@ -93,7 +93,7 @@ namespace SpaceGame.Entities.Enemy
 
 			foreach (Node node in planets)
 			{
-				if (node is SpaceGame.Entities.Planet.Planet planet && !planet.isCaptured)
+				if (node is SpaceGame.Entities.Planet.Planet planet && !planet.isCaptured && !planet.IsOccupied)
 				{
 					float dist = GlobalPosition.DistanceTo(planet.GlobalPosition);
 					if (dist < minDistance)

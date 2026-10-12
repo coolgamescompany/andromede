@@ -20,6 +20,7 @@ namespace SpaceGame.Entities.Planet
 
 		private bool _isPlayerLanded = false;
 		private RigidBody2D _shuttleBody = null;
+		public bool IsOccupied => _shuttleBody != null;
 
 		private Area2D _gravityArea;
 		private bool _isPlayerInsideZone = false;

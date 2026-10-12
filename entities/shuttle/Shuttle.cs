@@ -232,7 +232,7 @@ namespace SpaceGame.Entities.Shuttle
 
 			foreach (Node node in nodes)
 			{
-				if (node is Planet.Planet planet && !planet.isCaptured)
+				if (node is Planet.Planet planet && !planet.isCaptured && !planet.IsOccupied)
 				{
 					float dist = GlobalPosition.DistanceTo(planet.GlobalPosition);
 					if (dist < minDistance)
